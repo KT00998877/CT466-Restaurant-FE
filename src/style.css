@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+:root {
+  --primary-color: #bc002d; /* Đỏ Nhật Bản */
+  --bg-color: #f4f1ea;      /* Màu giấy Shoji/Gỗ nhạt */
+  --text-color: #1a1a1a;    /* Đen than */
+  --accent-color: #2d5a27;  /* Xanh lá trà (Matcha) */
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  /* Sử dụng ảnh nền từ thư mục assets */
+  background-image: url('./assets/img/background.jpg');
+  /* Đảm bảo ảnh luôn phủ kín màn hình */
+  background-size: cover;
+  /* Giữ hình nền cố định khi cuộn trang */
+  background-attachment: fixed;
+  /* Căn giữa hình nền */
+  background-position: center;
+  /* Ngăn hình nền lặp lại */
+  background-repeat: no-repeat;
+  
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #333;
+}
+
+/* Tablet */
+@media (max-width: 1024px) {
+
+.nav-links {
+    gap: 15px;
+}
+
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+
+.navbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+}
+
+.nav-links {
+    flex-direction: column;
+    width: 100%;
+    gap: 10px;
+}
+
+.auth-buttons {
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+}
+
+}
+
+/* Mobile nhỏ */
+@media (max-width: 480px) {
+
+.logo {
+    font-size: 1.2rem;
+}
+
+.nav-links a {
+    font-size: 14px;
+}
+
+}
