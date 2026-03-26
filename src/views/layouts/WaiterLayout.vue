@@ -38,17 +38,17 @@
                     <router-link to="/waiter/kitchen-status" title="Bếp / Bar">
                         <div class="position-relative">
                             <i class="bi bi-bell"></i>
-                            <span
+                           <span v-if="readyCount > 0"
                                 class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle"
                                 style="font-size: 0.6rem;">
-                                3
+                                {{ readyCount }}
                             </span>
                         </div>
                         <span>Trạng thái Bếp</span>
                     </router-link>
                 </li>
                 <li>
-                    <router-link to="/waiter/orders" title="Đơn trong ngày">
+                    <router-link to="/waiter/my-orders" title="Đơn trong ngày">
                         <i class="bi bi-receipt"></i>
                         <span>Đơn hàng</span>
                     </router-link>
@@ -62,17 +62,35 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuth } from '@/composables/useAuth';
+import api from '@/services/api';
 
 const router = useRouter();
 const { user, logout } = useAuth();
-
 const isUserDropdownOpen = ref(false);
 
+// --- LOGIC THÔNG BÁO TỪ BẾP ---
+const readyCount = ref(0);
+let notificationInterval = null;
+
+const fetchReadyCount = async () => {
+    try {
+        const res = await api.get('/waiter/notifications/ready-count');
+        if (res.data.success) {
+            readyCount.value = res.data.count;
+        }
+    } catch (error) {
+        console.error("Lỗi lấy thông báo bếp:", error);
+    }
+};
+// ------------------------------
+
+// 1. SỬA LẠI HÀM NÀY: Mở / Đóng menu khi bấm vào tên User
 const toggleUserDropdown = (event) => {
     event.preventDefault();
     isUserDropdownOpen.value = !isUserDropdownOpen.value;
 };
 
+// 2. SỬA LẠI HÀM NÀY: Xử lý Đăng xuất
 const handleLogout = async () => {
     isUserDropdownOpen.value = false;
     try {
@@ -82,6 +100,7 @@ const handleLogout = async () => {
     }
 };
 
+// 3. SỬA LẠI HÀM NÀY: Đóng menu khi bấm ra ngoài khoảng trống
 const closeClickOutside = (e) => {
     if (!e.target.closest('.user-dropdown')) {
         isUserDropdownOpen.value = false;
@@ -90,10 +109,15 @@ const closeClickOutside = (e) => {
 
 onMounted(() => {
     window.addEventListener('click', closeClickOutside);
+
+    // Khởi chạy đếm thông báo và lặp lại mỗi 10 giây
+    fetchReadyCount();
+    notificationInterval = setInterval(fetchReadyCount, 10000);
 });
 
 onUnmounted(() => {
     window.removeEventListener('click', closeClickOutside);
+    if (notificationInterval) clearInterval(notificationInterval);
 });
 </script>
 

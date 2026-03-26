@@ -19,6 +19,12 @@
                         <span v-if="isSidebarOpen">Món đã xong</span>
                     </router-link>
                 </li>
+                <li>
+                    <router-link to="/kitchen/ingredients" title="Quản lý nguyên liệu">
+                        <i class="bi bi-box-seam"></i>
+                        <span v-if="isSidebarOpen">Danh sách nguyên liệu</span>
+                    </router-link>
+                </li>
             </ul>
         </aside>
 

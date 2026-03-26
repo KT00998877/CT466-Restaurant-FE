@@ -37,6 +37,26 @@
                         <span v-if="isSidebarOpen">Quản lý Khách hàng</span>
                     </router-link>
                 </li>
+                <li>
+                    <router-link to="/admin/ingredients" title="Quản lý Nguyên liệu">
+                        <i class="bi bi-box-seam"></i>
+                        <span v-if="isSidebarOpen">Quản lý Nguyên liệu</span>
+                    </router-link>
+                </li>
+
+                <li>
+                    <router-link to="/admin/inventory" title="Quản lí kho">
+                        <i class="bi bi-bar-chart"></i>
+                        <span v-if="isSidebarOpen">Quản lí kho</span>
+                    </router-link>
+                </li>
+
+                <li>
+                    <router-link to="/admin/reports" title="Báo cáo Doanh thu">
+                        <i class="bi bi-graph-up"></i>
+                        <span v-if="isSidebarOpen">Báo cáo Doanh thu</span>
+                    </router-link>
+                </li>
             </ul>
         </aside>
 

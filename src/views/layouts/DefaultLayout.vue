@@ -1,7 +1,7 @@
 <template>
     <div class="layout">
         <nav class="navbar">
-            <div class="logo">RESTAURANT</div>
+            <div class="logo">KT RESTAURANT</div>
 
             <div class="hamburger" @click="toggleMenu">
                 ☰
@@ -54,6 +54,12 @@
                                     <i class="bi bi-receipt me-2"></i>Xem hoá đơn
                                 </router-link>
                             </li>
+                            <li>
+                                <router-link to="/profile" @click="isUserDropdownOpen = false">
+                                    <i class="bi bi-person me-2"></i>Thông tin tài khoản
+                                </router-link>
+                            </li>
+
                             <li>
                                 <router-link to="/my-reservations" @click="isUserDropdownOpen = false">
                                     <i class="bi bi-person me-2"></i>Lịch sử đặt bàn
@@ -134,7 +140,7 @@
                 <p>&copy; 2024 Restaurant. All Rights Reserved.</p>
             </div>
         </footer>
-
+        <ChatbotWidget />
     </div>
 </template>
 
@@ -144,7 +150,7 @@ import { useRouter } from 'vue-router';
 import { useAuth } from '@/composables/useAuth';
 import axios from 'axios';
 import { useCart } from '@/composables/useCart';
-
+import ChatbotWidget from '../user/ChatbotWidget.vue';
 const router = useRouter();
 const { isLoggedIn, user, logout } = useAuth();
 const { cartCount, fetchCart } = useCart();
