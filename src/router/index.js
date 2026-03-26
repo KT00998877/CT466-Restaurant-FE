@@ -14,6 +14,7 @@ import PrivacyPolicy from "../views/user/PrivacyPolicy.vue";
 import TermsOfService from "../views/user/TermsOfService.vue";
 import RefundPolicy from "../views/user/RefundPolicy.vue";
 import ShippingPolicy from "../views/user/ShippingPolicy.vue";
+import UserProfile from "../views/user/UserProfile.vue";
 
 // --- Import Layouts ---
 import AdminLayout from "../views/layouts/AdminLayout.vue";
@@ -24,11 +25,14 @@ import CashierLayout from "../views/layouts/CashierLayout.vue";
 import WaiterLayout from "../views/layouts/WaiterLayout.vue"; 
 import TableMap from "../views/waiter/TableMap.vue";
 import Order from "../views/waiter/Order.vue";
+import WaiterKitchenStatus from "../views/waiter/WaiterKitchenStatus.vue";
+import WaiterOrders from "../views/waiter/WaiterOrders.vue";
 
 // --- Import Kitchen Layout ---
 import KitchenLayout from "../views/layouts/KitchenLayout.vue";
 import PendingOrders from "../views/kitchen/Pending.vue";
 import History from "../views/kitchen/History.vue";
+import Ingredient from "../views/kitchen/Ingredient.vue";
 
 // --- Import Admin Components ---
 import Dashboard from "../views/admin/Dashboard.vue";
@@ -36,6 +40,10 @@ import MenuManagement from "../views/admin/MenuManagement.vue";
 import OrderManagement from "../views/admin/OrderManagement.vue";
 import ReservationManagement from "../views/admin/ReservationManagement.vue";
 import UserManagement from "../views/admin/UserManagement.vue";
+import IngredientManager from "../views/admin/IngredientManager.vue";
+import AdminInventory from "../views/admin/AdminInventory.vue";
+import AdminReport from "../views/admin/AdminReport.vue";
+
 
 const routes = [
   // ─── AUTH (GUEST) ──────────────────────────────────────────
@@ -114,6 +122,13 @@ const routes = [
     meta: { requiresAuth: true },
   },
 
+  {
+    path: "/profile",
+    name: "profile",
+    component: UserProfile,
+    meta: { requiresAuth: true },
+  },
+
   // ─── CASHIER (THU NGÂN) ────────────────────────────────────
   {
     path: "/cashier",
@@ -149,6 +164,16 @@ const routes = [
         name: "waiter-orders",
         component: Order,
       },
+      {
+        path: "kitchen-status",
+        name: "waiter-kitchen-status",
+        component: WaiterKitchenStatus,
+      },
+      {
+        path: "my-orders",
+        name: "waiter-my-orders",
+        component: WaiterOrders,
+      }
     ],
   },
 
@@ -160,7 +185,8 @@ const routes = [
     meta: { requiresAuth: true, role: "kitchen" },
     children: [
       { path: "pending", name: "kitchen-pending", component: PendingOrders },
-      { path: "history", name: "kitchen-history", component: History }
+      { path: "history", name: "kitchen-history", component: History },
+      { path: "ingredients", name: "kitchen-ingredients", component: Ingredient }
 
     ]
 },
@@ -180,6 +206,9 @@ const routes = [
         component: ReservationManagement,
       },
       { path: "users", name: "admin-users", component: UserManagement },
+      { path: "ingredients", name: "admin-ingredients", component: IngredientManager },
+      { path: "inventory", name: "admin-inventory", component: AdminInventory },
+      { path: "reports", name: "admin-reports", component: AdminReport }
     ],
   },
 

@@ -7,9 +7,17 @@
                 </button>
                 <h1 class="text-primary">{{ tableName }}</h1>
             </div>
-            <span class="badge" :class="tableInfo?.status === 'available' ? 'bg-success' : 'bg-danger'">
-                {{ tableInfo?.status === 'available' ? 'Bàn trống' : 'Đang phục vụ' }}
-            </span>
+
+            <div class="d-flex align-items-center gap-2">
+                <button v-if="tableInfo?.status === 'occupied'" class="btn btn-sm btn-outline-danger"
+                    @click="cancelTable">
+                    <i class="bi bi-trash"></i> Hủy bàn
+                </button>
+
+                <span class="badge" :class="tableInfo?.status === 'available' ? 'bg-success' : 'bg-danger'">
+                    {{ tableInfo?.status === 'available' ? 'Bàn trống' : 'Đang phục vụ' }}
+                </span>
+            </div>
         </header>
 
         <div v-if="tableInfo?.status === 'available'" class="text-center py-5 bg-white rounded-3 shadow-sm mt-3">
@@ -87,9 +95,17 @@
                             <div class="d-flex justify-content-between align-items-center mt-2">
                                 <small class="text-muted fst-italic">{{ item.note || 'Không ghi chú' }}</small>
 
-                                <span class="badge" :class="getStatusClass(item.status)">
-                                    {{ getStatusText(item.status) }}
-                                </span>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge" :class="getStatusClass(item.status)">
+                                        {{ getStatusText(item.status) }}
+                                    </span>
+
+                                    <button v-if="item.status === 'ready'"
+                                        class="btn btn-sm btn-success rounded-pill px-2 py-0"
+                                        style="font-size: 0.75rem;" @click="markAsServed(item)">
+                                        <i class="bi bi-check2-all"></i> Đã lên món
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
@@ -104,26 +120,147 @@
                             <span class="fs-5 fw-bold">Tổng tiền bàn:</span>
                             <span class="fs-5 fw-bold text-danger">{{ formatCurrency(grandTotal) }}</span>
                         </div>
-                        <button class="btn btn-primary w-100 py-2 fw-bold" :disabled="cart.length === 0"
+
+                        <button class="btn btn-primary w-100 py-2 fw-bold mb-2" :disabled="cart.length === 0"
                             @click="sendOrderToKitchen">
-                            <i class="bi bi-send-check me-2"></i> GỬI XUỐNG BẾP MÓN MỚI
+                            <i class="bi bi-send-check me-2"></i> GỬI XUỐNG BẾP
                         </button>
+
+                        <button class="btn btn-success w-100 py-2 fw-bold"
+                            :disabled="orderedItems.length === 0 || cart.length > 0 || hasUnfinishedItems"
+                            @click="showCheckoutModal = true">
+                            <i class="bi bi-cash-coin me-2"></i> THANH TOÁN BÀN NÀY
+                        </button>
+
+                        <div class="text-center mt-2">
+                            <small v-if="cart.length > 0" class="text-danger d-block" style="font-size: 0.8rem;">
+                                * Vui lòng gửi món mới xuống bếp trước khi thanh toán.
+                            </small>
+                            <small v-else-if="hasUnfinishedItems" class="text-danger d-block fw-bold"
+                                style="font-size: 0.85rem;">
+                                * Không thể thanh toán! Vẫn còn món đang làm trong bếp.
+                            </small>
+                        </div>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <div v-if="showCheckoutModal" class="modal-overlay" @click.self="showCheckoutModal = false">
+            <div class="modal-content">
+                <h2>Thanh Toán {{ tableName }}</h2>
+
+                <form @submit.prevent="submitCheckout">
+                    <div class="text-center mb-4 p-3 bg-light rounded border">
+                        <span class="d-block text-muted mb-1">Tổng tiền cần thanh toán</span>
+                        <h3 class="text-danger fw-bold m-0">{{ formatCurrency(totalOrderedPrice) }}</h3>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Phương thức thanh toán</label>
+                        <select v-model="checkoutForm.payment_method" class="form-select">
+                            <option value="cash">Tiền mặt</option>
+                            <option value="transfer">Chuyển khoản</option>
+                            <option value="card">Quẹt thẻ (POS)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group mt-3">
+                        <label>Ghi chú thu ngân (Tùy chọn)</label>
+                        <textarea v-model="checkoutForm.note" rows="2" class="form-control"
+                            placeholder="Ví dụ: Khách yêu cầu xuất VAT..."></textarea>
+                    </div>
+
+                    <div class="modal-actions mt-4">
+                        <button type="button" class="btn-cancel" @click="showCheckoutModal = false"
+                            :disabled="isSubmitting">Hủy</button>
+                        <button type="submit" class="btn-confirm bg-success" :disabled="isSubmitting">
+                            {{ isSubmitting ? 'Đang xử lý...' : 'Xác nhận Thu tiền' }}
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, reactive } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import api from '@/services/api';
 
 const route = useRoute();
 const router = useRouter();
 const orderedItems = ref([]);
+const showCheckoutModal = ref(false);
+const isSubmitting = ref(false);
 
+const checkoutForm = reactive({
+    payment_method: "cash",
+    note: ""
+});
+
+// ─── ĐÁNH DẤU MÓN ĐÃ LÊN BÀN ──────────────────────────────────
+const markAsServed = async (item) => {
+    // Để an toàn, hỏi lại 1 câu phòng khi bấm nhầm
+    if (!confirm(`Xác nhận đã mang món "${item.item_name}" lên bàn?`)) return;
+
+    try {
+        // Gọi API lên Laravel để cập nhật DB (Bạn cần tạo API này ở Bước 3)
+        // Chú ý: Cần truyền id của chi tiết hóa đơn (item.id)
+        const response = await api.put(`/waiter/order-items/${item.id}/serve`);
+
+        if (response.data.success) {
+            // Cập nhật thẳng trạng thái trên giao diện thành 'served' để khỏi phải load lại trang
+            item.status = 'served';
+        } else {
+            alert(response.data.message || 'Lỗi: Không thể cập nhật trạng thái!');
+        }
+    } catch (error) {
+        console.error("Lỗi khi xác nhận lên món:", error);
+        alert("Có lỗi kết nối, không thể xác nhận lúc này!");
+    }
+};
+
+// ─── XỬ LÝ THANH TOÁN BÀN ──────────────────────────────────
+const submitCheckout = async () => {
+    try {
+        isSubmitting.value = true;
+
+        const payload = {
+            table_id: tableInfo.value.id,
+            amount: totalOrderedPrice.value,
+            payment_method: checkoutForm.payment_method,
+            note: checkoutForm.note
+        };
+
+        // GỌI API THANH TOÁN (Bạn cần viết endpoint này ở Laravel Backend)
+        const response = await api.post('/waiter/checkout', payload);
+
+        if (response.data.success) {
+            alert("🎉 Thanh toán thành công! Bàn đã được dọn trống.");
+
+            // Reset trạng thái trên giao diện
+            showCheckoutModal.value = false;
+            tableInfo.value.status = 'available'; // Trả bàn về trạng thái trống
+            orderedItems.value = []; // Xóa hóa đơn
+
+            // Đưa form về mặc định
+            checkoutForm.payment_method = 'cash';
+            checkoutForm.note = '';
+
+            // Tùy chọn: Chuyển hướng phục vụ về trang sơ đồ bàn
+            // router.push('/waiter/tables'); 
+        } else {
+            alert("Lỗi: " + (response.data.message || "Không thể thanh toán"));
+        }
+    } catch (error) {
+        console.error("Lỗi thanh toán:", error);
+        alert("❌ Thanh toán thất bại. Vui lòng kiểm tra lại kết nối.");
+    } finally {
+        isSubmitting.value = false;
+    }
+};
 // Thông tin bàn
 const tableName = ref('Đang tải...');
 const tableInfo = ref(null);
@@ -253,12 +390,59 @@ onMounted(() => {
 
 // ─── CÁC HÀM XỬ LÝ LOGIC (Giữ nguyên) ─────────────────────
 
+// ─── XỬ LÝ HỦY BÀN ──────────────────────────────────────────
+const cancelTable = async () => {
+    // 1. Kiểm tra xem có món nào đang làm hoặc đã lên bàn không (tránh hủy nhầm khi khách đang ăn)
+    const hasActiveItems = orderedItems.value.some(item =>
+        ['pending', 'cooking', 'ready', 'served'].includes(item.status)
+    );
+
+    if (hasActiveItems) {
+        alert("⚠️ Bàn này đã có món được gửi xuống bếp. Không thể hủy cả bàn, bạn chỉ có thể hủy từng món hoặc thanh toán!");
+        return;
+    }
+
+    // 2. Hỏi xác nhận
+    if (!confirm(`Bạn có chắc chắn muốn HỦY ${tableName.value} và trả về trạng thái trống không?`)) {
+        return;
+    }
+
+    try {
+        // 3. Gọi API hủy bàn
+        const response = await api.post('/waiter/tables/cancel', {
+            table_id: tableInfo.value.id
+        });
+
+        if (response.data.success) {
+            alert("✅ Hủy bàn thành công!");
+            // Trả giao diện về trạng thái ban đầu
+            tableInfo.value.status = 'available';
+            orderedItems.value = [];
+            cart.value = [];
+        } else {
+            alert(response.data.message || "Lỗi không thể hủy bàn!");
+        }
+    } catch (error) {
+        console.error("Lỗi khi hủy bàn:", error);
+        alert("❌ Lỗi kết nối, không thể hủy bàn lúc này.");
+    }
+};
+
 // Lọc thực đơn theo danh mục (chú ý sửa thành category_id)
 const filteredMenu = computed(() => {
     if (activeCategory.value === 'all') return menuItems.value;
     return menuItems.value.filter(item => item.category_id === activeCategory.value);
 });
 
+// --- KIỂM TRA ĐIỀU KIỆN THANH TOÁN ---
+// Trả về true nếu CÓ ÍT NHẤT 1 MÓN đang chờ làm (pending) hoặc đang nấu (cooking)
+const hasUnfinishedItems = computed(() => {
+    if (orderedItems.value.length === 0) return false;
+
+    return orderedItems.value.some(item =>
+        item.status === 'pending' || item.status === 'cooking'
+    );
+});
 
 const formatCurrency = (value) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
@@ -339,8 +523,12 @@ const totalCartPrice = computed(() => {
 });
 
 // Tính tiền các món ĐÃ GỌI
+
 const totalOrderedPrice = computed(() => {
-    return orderedItems.value.reduce((total, item) => total + parseFloat(item.subtotal), 0);
+    return orderedItems.value.reduce((total, item) => {
+        // Nếu món bị hủy (cancelled) thì cộng 0 đồng, ngược lại thì cộng giá trị subtotal
+        return item.status === 'cancelled' ? total : total + parseFloat(item.subtotal);
+    }, 0);
 });
 
 // Tổng tiền cả bàn (Mới + Cũ)
@@ -475,5 +663,83 @@ const getStatusText = (status) => {
         padding-bottom: 60vh;
         /* Chừa chỗ cho cart nổi lên */
     }
+}
+
+/* --- MODAL STYLES --- */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1050;
+}
+
+.modal-content {
+    background: white;
+    color: #333;
+    width: 90%;
+    max-width: 450px;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-30px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.modal-content h2 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 1.5rem;
+    color: #2c3e50;
+    text-align: center;
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 15px;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.btn-cancel {
+    background: #f1f2f6;
+    color: #333;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.btn-confirm {
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.btn-cancel:disabled,
+.btn-confirm:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 </style>

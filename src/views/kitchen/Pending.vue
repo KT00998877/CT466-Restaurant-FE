@@ -46,6 +46,12 @@
                             @click="updateStatus(item.id, 'ready')">
                             <i class="bi bi-check-lg"></i> HOÀN THÀNH
                         </button>
+
+                        <button v-if="item.status === 'pending' || item.status === 'cooking'"
+                            class="btn btn-danger fw-bold px-3" @click="cancelItem(item)">
+                            <i class="bi bi-x-circle"></i> HỦY
+                        </button>
+
                     </div>
                 </div>
             </div>
@@ -60,7 +66,7 @@ import api from '@/services/api';
 const items = ref([]);
 const isLoading = ref(true);
 let refreshInterval = null;
-
+// Hàm lấy danh sách món ăn cần chế biến (trạng thái pending hoặc cooking)
 const fetchItems = async () => {
     try {
         const res = await api.get('/kitchen/pending');
@@ -74,6 +80,8 @@ const fetchItems = async () => {
     }
 };
 
+// Hàm cập nhật trạng thái món ăn (từ pending -> cooking -> ready)
+
 const updateStatus = async (id, newStatus) => {
     try {
         const res = await api.patch(`/kitchen/items/${id}/status`, { status: newStatus });
@@ -86,6 +94,38 @@ const updateStatus = async (id, newStatus) => {
     }
 };
 
+// ─── HÀM HỦY MÓN DÀNH CHO BẾP ────────────────────────────────
+const cancelItem = async (item) => {
+    // 1. Hỏi xác nhận và lấy lý do hủy
+    const reason = prompt(`Bạn đang hủy món "${item.item_name}" của bàn ${item.order?.table?.name || 'Mang đi'}.\nVui lòng nhập lý do (VD: Hết nguyên liệu, Khách đổi ý...):`);
+
+    // Nếu người dùng bấm "Cancel" trên popup, hoặc để trống lý do
+    if (reason === null) return;
+    if (reason.trim() === '') {
+        alert("Bắt buộc phải nhập lý do khi hủy món!");
+        return;
+    }
+
+    try {
+        // 2. Tái sử dụng API cập nhật trạng thái, gửi kèm lý do
+        const res = await api.patch(`/kitchen/items/${item.id}/status`, {
+            status: 'cancelled',
+            cancel_reason: reason // Gửi thêm trường này lên server
+        });
+
+        if (res.data.success) {
+            alert("Đã hủy món thành công!");
+            fetchItems(); // Tải lại danh sách
+        } else {
+            alert(res.data.message || 'Lỗi: Không thể hủy món!');
+        }
+    } catch (error) {
+        console.error("Lỗi khi hủy món:", error);
+        alert("Có lỗi kết nối, không thể hủy lúc này!");
+    }
+};
+
+// Hàm định dạng thời gian hiển thị cho bếp (chỉ giờ và phút)
 const formatTime = (timeString) => {
     const date = new Date(timeString);
     return date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
