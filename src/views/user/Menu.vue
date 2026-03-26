@@ -54,7 +54,7 @@ const addToCart = async (item) => {
 const fetchMenuData = async () => {
     isLoading.value = true;
     try {
-        // Dùng api.js tự động nối Base URL (http://127.0.0.1:8000/api)
+        
         const response = await api.get('/menu');
         
         if (response.data.success) {
