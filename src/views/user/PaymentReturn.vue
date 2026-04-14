@@ -2,7 +2,7 @@
     <DefaultLayout>
         <div class="container text-center mt-5">
             <div v-if="status === 'success'" class="alert alert-success">
-                <h2>🎉 Thanh toán thành công!</h2>
+                <h2> Thanh toán thành công!</h2>
                 <p>Mã giao dịch: {{ transactionId }}</p>
                 <router-link to="/orders" class="btn btn-primary">Xem đơn hàng</router-link>
             </div>
@@ -12,7 +12,7 @@
             </div>
 
             <div v-else class="alert alert-danger">
-                <h2>❌ Thanh toán thất bại</h2>
+                <h2> Thanh toán thất bại</h2>
                 <p>Đơn hàng chưa được thanh toán hoặc có lỗi xảy ra.</p>
                 <router-link to="/cart" class="btn btn-warning">Quay lại giỏ hàng</router-link>
             </div>

@@ -5,7 +5,7 @@
             💬 Tư vấn ngay
         </button>
 
-        <div v-else class="bg-white w-80 sm:w-96 rounded-lg shadow-2xl border border-gray-200 flex flex-col h-[500px]">
+       <div v-else class="bg-white w-[95vw] sm:w-[500px] md:w-[600px] rounded-lg shadow-2xl border border-gray-200 flex flex-col h-[80vh] max-h-[800px]">
             <div class="bg-blue-600 text-white p-3 rounded-t-lg flex justify-between items-center">
                 <h3 class="font-bold">Trợ lý Nhà hàng</h3>
                 <button @click="isOpen = false" class="text-white hover:text-gray-200 font-bold">✕</button>

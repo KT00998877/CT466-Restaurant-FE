@@ -166,7 +166,7 @@ const showToast = ref(false);
 const toastMessage = ref('');
 const toastType = ref('success');
 let toastTimeout = null;
-
+// Hàm hiển thị toast với thông điệp và loại (success hoặc error)
 const triggerToast = (message, type = 'success') => {
     toastMessage.value = message;
     toastType.value = type;
@@ -222,7 +222,7 @@ const handleFileUpload = (event) => {
 // ==========================================
 // CÁC HÀM GỌI API & LOGIC
 // ==========================================
-
+// Hàm tải danh sách món ăn từ API
 const fetchMenuItems = async () => {
     isLoading.value = true;
     try {
@@ -240,7 +240,7 @@ const fetchMenuItems = async () => {
         isLoading.value = false;
     }
 };
-
+// Hàm cập nhật trạng thái món ăn (Đang kinh doanh, Tạm hết nguyên liệu, Ngừng kinh doanh)
 const updateStatus = async (item) => {
     item.isUpdating = true;
     try {
@@ -282,7 +282,7 @@ const toggleHighlight = async (item, field) => {
         item.isUpdatingHighlight = false;
     }
 };
-
+// Hàm xóa món ăn
 const deleteItem = async (id) => {
     if (!confirm('Bạn có chắc chắn muốn xóa món ăn này không? Hành động này không thể hoàn tác!')) return;
     try {

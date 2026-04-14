@@ -49,6 +49,9 @@ import AdminReport from "../views/admin/AdminReport.vue";
 import DishManagement from "../views/admin/DishManagement.vue";
 import ContactManagement from "../views/admin/ContactManagement.vue";
 
+import CashierOrderManagement from "../views/cashier/OrderManagement.vue";
+import CashierReservationManagement from "../views/cashier/ReservationManagement.vue";
+
 const routes = [
   {
     path: "/",
@@ -158,12 +161,12 @@ const routes = [
       {
         path: "orders",
         name: "cashier-orders",
-        component: OrderManagement, // Tái sử dụng form quản lý hoá đơn
+        component: CashierOrderManagement, 
       },
       {
         path: "reservations",
         name: "cashier-reservations",
-        component: ReservationManagement, // Tái sử dụng form quản lý đặt bàn
+        component: CashierReservationManagement, 
       },
     ],
   },

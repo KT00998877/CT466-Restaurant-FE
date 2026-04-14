@@ -3,6 +3,13 @@
         <div class="orders-page">
             <h1 class="title">Lịch Sử Đơn Hàng</h1>
 
+            <div class="filter-container">
+                <button v-for="filter in filters" :key="filter.value" class="filter-btn"
+                    :class="{ active: currentFilter === filter.value }" @click="currentFilter = filter.value">
+                    {{ filter.label }}
+                </button>
+            </div>
+
             <div v-if="isLoading" class="text-center mt-5 text-light">
                 Đang tải dữ liệu...
             </div>
@@ -12,8 +19,12 @@
                 <button class="btn-shopping" @click="router.push('/menu')">Đi đến Thực đơn</button>
             </div>
 
+            <div v-else-if="filteredOrders.length === 0" class="empty-state">
+                <p>Không có đơn hàng nào ở trạng thái này.</p>
+            </div>
+
             <div v-else class="orders-list">
-                <div v-for="order in orders" :key="order.id" class="order-card">
+                <div v-for="order in filteredOrders" :key="order.id" class="order-card">
                     <div class="order-header">
                         <div class="order-info">
                             <h3>Đơn hàng #{{ order.id }}</h3>
@@ -75,7 +86,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import api from '../../services/api';
 import DefaultLayout from '../layouts/DefaultLayout.vue';
@@ -85,12 +96,30 @@ const orders = ref([]);
 const isLoading = ref(true);
 const isProcessingPay = ref(false);
 
+// --- BIẾN CHO BỘ LỌC ---
+const currentFilter = ref('all');
+
+const filters = [
+    { value: 'all', label: 'Tất cả' },
+    { value: 'pending', label: 'Chờ xác nhận' },
+    { value: 'processing', label: 'Đang chuẩn bị' },
+    { value: 'delivering', label: 'Đang giao hàng' },
+    { value: 'completed', label: 'Hoàn thành' },
+    { value: 'cancelled', label: 'Đã huỷ' }
+];
+
+// --- TỰ ĐỘNG LỌC DANH SÁCH THEO TRẠNG THÁI ---
+const filteredOrders = computed(() => {
+    if (currentFilter.value === 'all') {
+        return orders.value;
+    }
+    return orders.value.filter(order => order.status === currentFilter.value);
+});
+
 const repayOrder = async (order) => {
     try {
         isProcessingPay.value = true;
 
-        // Gọi API lấy link VNPAY cho đơn hàng cũ
-        // Bạn cần đảm bảo Backend có route này (thường dùng chung logic với lúc checkout)
         const response = await api.post('/payment/vnpay', {
             order_id: order.id,
             amount: order.total_price
@@ -131,7 +160,6 @@ const formatDate = (dateString) => {
     return date.toLocaleDateString('vi-VN', { hour: '2-digit', minute: '2-digit' });
 };
 
-// Hàm dịch trạng thái sang tiếng Việt
 const translateStatus = (status) => {
     const statuses = {
         pending: 'Chờ xác nhận',
@@ -159,8 +187,55 @@ onMounted(() => {
 .title {
     text-align: center;
     color: white;
-    margin-bottom: 40px;
+    margin-bottom: 25px;
 }
+
+/* --- STYLE CHO THANH LỌC TRẠNG THÁI DÀNH CHO NỀN TỐI --- */
+.filter-container {
+    display: flex;
+    gap: 0.75rem;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+    margin-bottom: 2rem;
+    justify-content: center;
+    /* Căn giữa các nút */
+    scrollbar-width: none;
+}
+
+.filter-container::-webkit-scrollbar {
+    display: none;
+}
+
+.filter-btn {
+    white-space: nowrap;
+    padding: 0.6rem 1.25rem;
+    border-radius: 999px;
+    border: 1px solid #444;
+    /* Viền xám tối cho nền đen */
+    background: transparent;
+    color: #aaa;
+    /* Chữ xám nhạt */
+    font-weight: 500;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.filter-btn:hover {
+    border-color: #e67e22;
+    color: #e67e22;
+}
+
+.filter-btn.active {
+    background-color: #e67e22;
+    /* Màu cam chủ đạo */
+    border-color: #e67e22;
+    color: #fff;
+    /* Chữ trắng cho nổi bật */
+    font-weight: 600;
+}
+
+/* ------------------------------------- */
 
 .empty-state {
     text-align: center;
@@ -239,7 +314,6 @@ onMounted(() => {
     color: #721c24;
 }
 
-
 .status-badge.delivering {
     background: #e2e3e5;
     color: #383d41;
@@ -307,12 +381,16 @@ onMounted(() => {
         border-top: 1px dashed #ccc;
         padding-top: 15px;
     }
+
+    .filter-container {
+        justify-content: flex-start;
+        /* Cho phép scroll dễ dàng trên màn hình nhỏ */
+    }
 }
 
 .btn-pay-now {
     margin-top: 10px;
     background: #27ae60;
-    /* Màu xanh lá cây để kích thích thanh toán */
     color: white;
     border: none;
     padding: 8px 15px;
@@ -335,7 +413,6 @@ onMounted(() => {
     cursor: not-allowed;
 }
 
-/* Đảm bảo căn chỉnh nút trong mobile */
 @media (max-width: 768px) {
     .order-total .btn-pay-now {
         width: 100%;

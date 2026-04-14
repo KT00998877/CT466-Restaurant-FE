@@ -67,7 +67,7 @@ const isLoading = ref(true);
 const fetchMenuItems = async () => {
     isLoading.value = true;
     try {
-        const response = await api.get('/admin/menu-items');
+        const response = await api.get('/kitchen/menu-items');
         if (response.data.success) {
             menuItems.value = response.data.data;
         }

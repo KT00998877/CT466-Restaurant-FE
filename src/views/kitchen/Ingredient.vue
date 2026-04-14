@@ -64,7 +64,7 @@ const form = ref({
 // Lấy danh sách nguyên liệu
 const fetchIngredients = async () => {
     try {
-        const response = await api.get('/admin/ingredients');
+        const response = await api.get('/kitchen/ingredients');
         if (response.data.success) {
             ingredients.value = response.data.data;
         }
@@ -76,7 +76,7 @@ const fetchIngredients = async () => {
 // Lấy danh sách cảnh báo sắp hết
 const fetchLowStock = async () => {
     try {
-        const response = await api.get('/admin/ingredients/low-stock');
+        const response = await api.get('/kitchen/ingredients/low-stock');
         if (response.data.success) {
             lowStockIngredients.value = response.data.data;
         }
@@ -90,9 +90,6 @@ onMounted(() => {
     fetchIngredients();
     fetchLowStock();
 });
-
-
-
 
 
 // Reset form

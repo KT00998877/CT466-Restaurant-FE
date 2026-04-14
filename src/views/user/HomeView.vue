@@ -178,7 +178,7 @@ onUnmounted(() => stopTimer());
 </template>
 
 <style scoped>
-/* Toàn bộ CSS phần Hero, Carousel và Menu Card giữ nguyên */
+
 .hero-banner {
     height: 80vh;
     width: 100%;

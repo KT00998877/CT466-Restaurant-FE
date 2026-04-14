@@ -8,7 +8,7 @@
         </div>
 
         <div class="row g-3 mb-4 bg-white p-3 rounded shadow-sm border">
-            <div class="col-12 col-md-4">
+            <div class="col-12 col-md-5">
                 <div class="input-group">
                     <span class="input-group-text bg-light text-muted"><i class="bi bi-search"></i></span>
                     <input type="text" class="form-control" v-model="searchQuery"
@@ -16,7 +16,7 @@
                 </div>
             </div>
 
-            <div class="col-12 col-md-3">
+            <div class="col-12 col-md-4">
                 <div class="input-group">
                     <span class="input-group-text bg-light"><i class="bi bi-funnel"></i></span>
                     <select class="form-select" v-model="filterType">
@@ -29,21 +29,6 @@
 
             <div class="col-12 col-md-3">
                 <div class="input-group">
-                    <span class="input-group-text bg-light"><i class="bi bi-tags"></i></span>
-                    <select class="form-select" v-model="filterStatus">
-                        <option value="">Tất cả trạng thái</option>
-                        <option value="pending">Chờ xử lý</option>
-                        <option value="processing">Đang làm món</option>
-                        <option value="serving">Đang phục vụ</option>
-                        <option value="delivering">Đang giao</option>
-                        <option value="completed">Đã hoàn thành</option>
-                        <option value="cancelled">Đã hủy</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="col-12 col-md-2">
-                <div class="input-group">
                     <span class="input-group-text bg-light"><i class="bi bi-sort-down"></i></span>
                     <select class="form-select" v-model="sortOrder">
                         <option value="desc">Mới nhất</option>
@@ -51,6 +36,14 @@
                     </select>
                 </div>
             </div>
+        </div>
+
+        <div class="quick-tabs-container mb-4">
+            <button v-for="tab in filterTabs" :key="tab.value" class="quick-tab"
+                :class="{ active: filterStatus === tab.value }" @click="filterStatus = tab.value">
+                {{ tab.label }}
+                <span class="count-badge" :class="tab.badgeClass">{{ tab.count }}</span>
+            </button>
         </div>
 
         <div v-if="isLoading" class="text-center py-5">
@@ -75,7 +68,8 @@
                 <div class="card shadow-sm h-100 border-0"
                     :class="{ 'border-start border-4 border-warning': order.status === 'pending' }">
 
-                    <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center py-3"
+                        style="cursor: pointer; user-select: none;" @click="toggleOrderDetails(order.id)">
                         <div>
                             <h5 class="mb-1 fw-bold">#{{ order.id }}</h5>
                             <span v-if="order.table_id === null" class="badge bg-info text-dark me-2">
@@ -88,12 +82,16 @@
                                 }}</small>
                         </div>
 
-                        <span class="badge fs-6" :class="getOrderStatusClass(order.status)">
-                            {{ getOrderStatusText(order.status) }}
-                        </span>
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="badge fs-6" :class="getOrderStatusClass(order.status)">
+                                {{ getOrderStatusText(order.status) }}
+                            </span>
+                            <i class="bi text-muted"
+                                :class="expandedOrders.includes(order.id) ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+                        </div>
                     </div>
 
-                    <div class="card-body p-0">
+                    <div class="card-body p-0" v-show="expandedOrders.includes(order.id)">
                         <div class="table-responsive">
                             <table class="table table-hover table-borderless mb-0 align-middle">
                                 <thead class="table-light text-muted small">
@@ -136,8 +134,18 @@
 
                         <div v-if="order.table_id === null && !['completed', 'cancelled'].includes(order.status)"
                             class="d-flex gap-2">
-                            <button class="btn btn-sm btn-success" @click="updateOrderStatus(order.id, 'completed')">
-                                <i class="bi bi-check2-circle"></i> Hoàn thành
+
+                            <button v-if="order.status !== 'delivering'" class="btn btn-sm btn-primary"
+                                @click.stop="updateOrderStatus(order.id, 'delivering')"
+                                :disabled="!canCompleteOrder(order)"
+                                :title="!canCompleteOrder(order) ? 'Chưa thể đi giao vì còn món đang chế biến' : 'Bắt đầu giao hàng'">
+                                <i class="bi bi-truck"></i> Tiến hành giao
+                            </button>
+
+                            <button v-if="order.status === 'delivering'" class="btn btn-sm btn-success"
+                                @click.stop="updateOrderStatus(order.id, 'completed')"
+                                title="Xác nhận đơn hàng đã giao thành công">
+                                <i class="bi bi-check-circle-fill"></i> Giao xong
                             </button>
                         </div>
                     </div>
@@ -156,15 +164,47 @@ const isLoading = ref(false);
 
 // --- CÁC BIẾN CHO TÌM KIẾM & LỌC ---
 const searchQuery = ref('');
-const filterType = ref(''); // '' (tất cả), 'dine-in', 'takeaway'
-const filterStatus = ref(''); // '' (tất cả), 'pending', 'processing', ...
-const sortOrder = ref('desc'); // 'desc' (mới nhất), 'asc' (cũ nhất)
+const filterType = ref('');
+const filterStatus = ref('');
+const sortOrder = ref('desc');
+
+// --- BIẾN CHO THU GỌN/MỞ RỘNG (CẢI TIẾN 1) ---
+const expandedOrders = ref([]);
+
+const toggleOrderDetails = (orderId) => {
+    const index = expandedOrders.value.indexOf(orderId);
+    if (index > -1) {
+        expandedOrders.value.splice(index, 1);
+    } else {
+        expandedOrders.value.push(orderId);
+    }
+};
+
+// --- COMPUTED: TẠO TAB & ĐẾM SỐ LƯỢNG (CẢI TIẾN 2) ---
+const getOrderCount = (status) => {
+    let baseOrders = orders.value;
+    // Vẫn tôn trọng bộ lọc Loại đơn (Dùng tại bàn / Mang đi) khi đếm
+    if (filterType.value === 'dine-in') baseOrders = baseOrders.filter(o => o.table_id !== null);
+    if (filterType.value === 'takeaway') baseOrders = baseOrders.filter(o => o.table_id === null);
+
+    if (status === '') return baseOrders.length;
+    return baseOrders.filter(o => o.status === status).length;
+};
+
+const filterTabs = computed(() => [
+    { value: '', label: 'Tất cả', count: getOrderCount(''), badgeClass: 'bg-secondary' },
+    { value: 'pending', label: 'Chờ xử lý', count: getOrderCount('pending'), badgeClass: 'bg-warning text-dark' },
+    { value: 'processing', label: 'Đang làm món', count: getOrderCount('processing'), badgeClass: 'bg-primary' },
+    { value: 'serving', label: 'Đang phục vụ', count: getOrderCount('serving'), badgeClass: 'bg-info text-dark' },
+    { value: 'delivering', label: 'Đang giao', count: getOrderCount('delivering'), badgeClass: 'bg-info text-dark' },
+    { value: 'completed', label: 'Hoàn thành', count: getOrderCount('completed'), badgeClass: 'bg-success' },
+    { value: 'cancelled', label: 'Đã hủy', count: getOrderCount('cancelled'), badgeClass: 'bg-danger' }
+]);
 
 // --- COMPUTED: LỌC & SẮP XẾP DỮ LIỆU ---
 const filteredAndSortedOrders = computed(() => {
     let result = orders.value;
 
-    // 1. Lọc theo chuỗi tìm kiếm (ID, Tên, SĐT, Tên Bàn)
     if (searchQuery.value) {
         const query = searchQuery.value.toLowerCase().trim();
         result = result.filter(order => {
@@ -177,19 +217,16 @@ const filteredAndSortedOrders = computed(() => {
         });
     }
 
-    // 2. Lọc theo Loại đơn
     if (filterType.value === 'dine-in') {
         result = result.filter(order => order.table_id !== null);
     } else if (filterType.value === 'takeaway') {
         result = result.filter(order => order.table_id === null);
     }
 
-    // 3. Lọc theo Trạng thái
     if (filterStatus.value) {
         result = result.filter(order => order.status === filterStatus.value);
     }
 
-    // 4. Sắp xếp theo Thời gian tạo
     result = [...result].sort((a, b) => {
         const timeA = new Date(a.created_at).getTime();
         const timeB = new Date(b.created_at).getTime();
@@ -199,7 +236,6 @@ const filteredAndSortedOrders = computed(() => {
     return result;
 });
 
-// Hàm reset nhanh các bộ lọc
 const resetFilters = () => {
     searchQuery.value = '';
     filterType.value = '';
@@ -226,10 +262,10 @@ const fetchOrders = async () => {
 };
 
 const updateOrderStatus = async (orderId, newStatus) => {
-    if (!confirm('Xác nhận cập nhật trạng thái đơn hàng này?')) return;
+    if (!confirm('Xác nhận tiến hành giao hàng?')) return;
 
     try {
-        const response = await api.put(`/admin/orders/${orderId}/status`, {
+        const response = await api.patch(`/admin/orders/${orderId}/status`, {
             status: newStatus
         });
         if (response.data.success) {
@@ -241,6 +277,14 @@ const updateOrderStatus = async (orderId, newStatus) => {
         console.error("Lỗi cập nhật:", error);
         alert("Có lỗi xảy ra khi cập nhật!");
     }
+};
+
+const canCompleteOrder = (order) => {
+    if (!order.items || order.items.length === 0) return false;
+    const hasUnfinishedItems = order.items.some(item =>
+        ['pending', 'cooking'].includes(item.status)
+    );
+    return !hasUnfinishedItems;
 };
 
 // ==========================================
@@ -306,3 +350,65 @@ onMounted(() => {
     fetchOrders();
 });
 </script>
+
+<style scoped>
+/* --- STYLE CHO TABS BỘ LỌC DÀNH CHO BOOTSTRAP --- */
+.quick-tabs-container {
+    display: flex;
+    gap: 0.75rem;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+    scrollbar-width: none;
+    /* Firefox */
+}
+
+.quick-tabs-container::-webkit-scrollbar {
+    display: none;
+    /* Chrome, Safari, Edge */
+}
+
+.quick-tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+    /* Màu border chuẩn bootstrap */
+    background: #fff;
+    color: #495057;
+    font-weight: 500;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.quick-tab:hover {
+    background: #f8f9fa;
+    border-color: #ced4da;
+}
+
+.quick-tab.active {
+    background-color: #e7f1ff;
+    /* Xanh nhạt chuẩn alert-primary */
+    border-color: #0d6efd;
+    /* Xanh primary bootstrap */
+    color: #0d6efd;
+    box-shadow: 0 2px 4px rgba(13, 110, 253, 0.15);
+}
+
+.count-badge {
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+/* ----------------------------------------------- */
+
+.card-header:hover {
+    background-color: #f8f9fa !important;
+}
+</style>
