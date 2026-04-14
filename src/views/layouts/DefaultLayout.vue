@@ -25,7 +25,8 @@
                         </li>
                     </ul>
                 </li>
-
+                <li><router-link to="/featured">Món nổi bật</router-link></li>
+                <li><router-link to="/daily-specials">Món ngon mỗi ngày</router-link></li>
                 <li><router-link to="/menu">Thực đơn</router-link></li>
                 <li><router-link to="/reservation">Đặt bàn</router-link></li>
                 <li><router-link to="/contact">Liên hệ</router-link></li>

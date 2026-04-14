@@ -9,6 +9,24 @@ const router = useRouter();
 const { cartItems, cartCount, loading, fetchCart } = useCart();
 
 /* =========================
+   STATE TÀI KHOẢN & ĐIỂM
+========================= */
+const userPoints = ref(0);
+const fetchUserProfile = async () => {
+    try {
+        const response = await api.get('/profile');
+        if (response.data.success) {
+            userPoints.value = response.data.data.points || 0;
+            // Tự động điền thông tin nếu có sẵn
+            checkoutForm.customer_name = response.data.data.name || '';
+            checkoutForm.customer_phone = response.data.data.phone || '';
+        }
+    } catch (error) {
+        console.error("Không thể lấy thông tin điểm:", error);
+    }
+};
+
+/* =========================
    STATE THANH TOÁN
 ========================= */
 const showCheckoutModal = ref(false);
@@ -19,8 +37,35 @@ const checkoutForm = reactive({
     customer_phone: "",
     customer_address: "",
     notes: "",
-    payment_method: "cod"
+    payment_method: "cod",
+    points_used: 0 // Thêm trường điểm muốn dùng
 });
+
+// Tính toán số tiền được giảm
+const discountAmount = computed(() => {
+    return (checkoutForm.points_used || 0) * 100;
+});
+
+// Tính tổng tiền cần thanh toán sau khi trừ điểm
+const finalAmount = computed(() => {
+    const final = totalPrice.value - discountAmount.value;
+    return final > 0 ? final : 0; // Không cho phép âm tiền
+});
+
+// Xử lý khi user nhập quá số điểm đang có
+const validatePoints = () => {
+    if (checkoutForm.points_used > userPoints.value) {
+        checkoutForm.points_used = userPoints.value;
+    }
+    // Tránh nhập số điểm tạo ra discount lớn hơn tổng bill
+    if (checkoutForm.points_used * 100 > totalPrice.value) {
+        checkoutForm.points_used = Math.ceil(totalPrice.value / 100);
+    }
+    // Không cho nhập số âm
+    if (checkoutForm.points_used < 0) {
+        checkoutForm.points_used = 0;
+    }
+};
 
 /* =========================
    TĂNG SỐ LƯỢNG
@@ -73,11 +118,9 @@ const submitOrder = async () => {
     try {
         isSubmitting.value = true;
 
-        // 1. Gửi thông tin đơn hàng lên Backend để lưu vào Database trước
-        // Bạn nên truyền thêm totalPrice để Backend kiểm tra
         const payload = {
             ...checkoutForm,
-            amount: totalPrice.value,
+            amount: finalAmount.value, // Gửi finalAmount thay vì totalPrice
         };
 
         const response = await api.post('/checkout', payload);
@@ -85,15 +128,12 @@ const submitOrder = async () => {
         if (response.data.success) {
             // TRƯỜNG HỢP 1: THANH TOÁN VNPAY
             if (checkoutForm.payment_method === 'vnpay') {
-                // Gọi tiếp API lấy link thanh toán từ Backend
-                // Lưu ý: Backend cần trả về vnpay_url sau khi tạo đơn hàng thành công
                 if (response.data.vnpay_url) {
                     window.location.href = response.data.vnpay_url;
                 } else {
-                    // Hoặc gọi một API riêng để lấy link nếu Backend không trả về chung
                     const payRes = await api.post('/payment/vnpay', {
                         order_id: response.data.order_id,
-                        amount: totalPrice.value
+                        amount: finalAmount.value // Sửa chỗ này thành finalAmount
                     });
                     window.location.href = payRes.data.url;
                 }
@@ -103,7 +143,7 @@ const submitOrder = async () => {
                 alert("🎉 Đặt hàng thành công! Cảm ơn bạn đã ủng hộ nhà hàng.");
                 showCheckoutModal.value = false;
                 cartItems.value = [];
-                router.push({ name: 'orders' }); // Chuyển đến trang lịch sử đơn hàng
+                router.push({ name: 'orders' });
             }
         }
     } catch (error) {
@@ -115,8 +155,10 @@ const submitOrder = async () => {
     }
 };
 
-
-onMounted(fetchCart);
+onMounted(() => {
+    fetchCart();
+    fetchUserProfile(); // Gọi thêm API lấy điểm
+});
 </script>
 
 <template>
@@ -196,10 +238,21 @@ onMounted(fetchCart);
                             placeholder="Nhập địa chỉ chi tiết"></textarea>
                     </div>
 
+                    <div class="form-group points-section">
+                        <label>Sử dụng điểm (Bạn có {{ userPoints }} điểm)</label>
+                        <div class="points-input-group">
+                            <input type="number" v-model.number="checkoutForm.points_used" @input="validatePoints"
+                                min="0" :max="userPoints" placeholder="0">
+                            <span class="discount-hint" v-if="discountAmount > 0">
+                                Giảm {{ formatPrice(discountAmount) }}
+                            </span>
+                        </div>
+                    </div>
+
                     <div class="form-group">
                         <label>Phương thức thanh toán</label>
                         <select v-model="checkoutForm.payment_method">
-                            <option value="cod">Thanh toán khi nhận hàng (COD)</option>
+                            <!-- <option value="cod">Thanh toán khi nhận hàng (COD)</option> -->
                             <option value="vnpay">Thanh toán VNPay</option>
                         </select>
                     </div>
@@ -208,6 +261,21 @@ onMounted(fetchCart);
                         <label>Ghi chú thêm</label>
                         <textarea v-model="checkoutForm.notes" rows="2"
                             placeholder="Ví dụ: Không ăn cay, lấy thêm muỗng nĩa..."></textarea>
+                    </div>
+
+                    <div class="checkout-summary">
+                        <div class="summary-line">
+                            <span>Tạm tính:</span>
+                            <span>{{ formatPrice(totalPrice) }}</span>
+                        </div>
+                        <div class="summary-line text-success" v-if="discountAmount > 0">
+                            <span>Khuyến mãi (Dùng điểm):</span>
+                            <span>-{{ formatPrice(discountAmount) }}</span>
+                        </div>
+                        <div class="summary-line total-line">
+                            <span>Thành tiền:</span>
+                            <span class="final-price">{{ formatPrice(finalAmount) }}</span>
+                        </div>
                     </div>
 
                     <div class="modal-actions">
@@ -224,6 +292,58 @@ onMounted(fetchCart);
 </template>
 
 <style scoped>
+.points-section {
+    background: #f8f9fa;
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px dashed #ccc;
+}
+
+.points-input-group {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.points-input-group input {
+    width: 100px;
+    padding: 8px;
+}
+
+.discount-hint {
+    color: #27ae60;
+    font-weight: bold;
+    font-size: 0.95rem;
+}
+
+.checkout-summary {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 2px dashed #eee;
+}
+
+.summary-line {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+}
+
+.text-success {
+    color: #27ae60;
+}
+
+.total-line {
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin-top: 10px;
+    color: #d35400;
+}
+
+.final-price {
+    font-size: 1.3rem;
+} 
+
 .cart-page {
     padding: 60px 10%;
     background: #1a1a1a;
@@ -337,6 +457,10 @@ onMounted(fetchCart);
     border-radius: 12px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
     animation: slideDown 0.3s ease;
+    max-height: 85vh;
+    /* Giới hạn chiều cao tối đa bằng 85% chiều cao màn hình */
+    overflow-y: auto;
+    /* Tự động hiện thanh cuộn dọc khi nội dung vượt quá chiều cao */
 }
 
 @keyframes slideDown {

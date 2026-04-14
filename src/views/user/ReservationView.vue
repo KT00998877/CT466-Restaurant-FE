@@ -40,7 +40,7 @@
             <template v-else-if="screen === 'form'">
                 <button class="btn-back" @click="backToList">← Quay lại danh sách</button>
 
-                <h1 class="page-title">📝 Đặt Bàn {{ selectedTable?.name }}</h1>
+                <h1 class="page-title"> Đặt Bàn {{ selectedTable?.name }}</h1>
 
                 <!-- Tóm tắt bàn đã chọn -->
                 <div class="selected-summary">
@@ -112,7 +112,7 @@
             <!-- ───────────────────────────────────────────────────── -->
             <template v-else-if="screen === 'success'">
                 <div class="success-screen">
-                    <div class="success-icon">🎉</div>
+                    <div class="success-icon"></div>
                     <h2>Đặt bàn thành công!</h2>
                     <p>Chúng tôi đã nhận yêu cầu và sẽ xác nhận sớm nhất.</p>
 
