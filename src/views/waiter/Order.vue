@@ -9,6 +9,10 @@
             </div>
 
             <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-sm btn-outline-info" @click="refreshData" :disabled="isRefreshing">
+                    <i class="bi bi-arrow-clockwise" :class="{ 'spin-anim': isRefreshing }"></i> Làm mới
+                </button>
+
                 <button v-if="tableInfo?.status === 'occupied'" class="btn btn-sm btn-outline-danger"
                     @click="cancelTable">
                     <i class="bi bi-trash"></i> Hủy bàn
@@ -69,7 +73,7 @@
                             <div class="d-flex justify-content-between align-items-start mb-1">
                                 <span class="fw-bold">{{ cartItem.name }}</span>
                                 <span class="text-danger fw-bold">{{ formatCurrency(cartItem.price * cartItem.quantity)
-                                    }}</span>
+                                }}</span>
                             </div>
                             <div class="d-flex justify-content-between align-items-center">
                                 <input type="text" class="form-control form-control-sm w-50"
@@ -147,17 +151,73 @@
         </div>
 
         <div v-if="showCheckoutModal" class="modal-overlay" @click.self="showCheckoutModal = false">
-            <div class="modal-content">
+            <div class="modal-content" style="max-width: 500px;">
                 <h2>Thanh Toán {{ tableName }}</h2>
 
                 <form @submit.prevent="submitCheckout">
-                    <div class="text-center mb-4 p-3 bg-light rounded border">
-                        <span class="d-block text-muted mb-1">Tổng tiền cần thanh toán</span>
-                        <h3 class="text-danger fw-bold m-0">{{ formatCurrency(totalOrderedPrice) }}</h3>
+                    <div class="customer-section mb-3 p-3 bg-light border rounded">
+                        <label class="fw-bold mb-2"><i class="bi bi-person-badge"></i> Khách hàng thành viên</label>
+                        <div class="input-group mb-2">
+                            <input type="text" v-model="customerPhone" class="form-control"
+                                placeholder="Nhập số điện thoại..." @keyup.enter="searchCustomer"
+                                @input="searchError = ''">
+                            <button class="btn btn-outline-secondary bg-white" type="button" @click="searchCustomer"
+                                :disabled="isSearchingCustomer">
+                                <span v-if="isSearchingCustomer" class="spinner-border spinner-border-sm"></span>
+                                <i v-else class="bi bi-search"></i> Tìm
+                            </button>
+                        </div>
+
+                        <div v-if="searchError" class="text-danger small mb-2 ms-1">
+                            <i class="bi bi-exclamation-circle"></i> {{ searchError }}
+                        </div>
+
+                        <div v-if="customerInfo" class="alert alert-info p-2 mb-0 mt-2">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <strong>{{ customerInfo.name }}</strong>
+                                <span>Đang có: <strong class="text-primary">{{
+                                    customerInfo.points }}</strong> điểm</span>
+                            </div>
+
+                            <div v-if="customerInfo.points > 0" class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" v-model="usePoints"
+                                    id="usePointsSwitch">
+                                <label class="form-check-label" for="usePointsSwitch">Dùng điểm để giảm giá</label>
+                            </div>
+
+                            <div v-if="usePoints" class="input-group input-group-sm mb-2">
+                                <span class="input-group-text">Dùng</span>
+                                <input type="number" class="form-control" v-model="pointsToUse" @input="validatePoints"
+                                    min="0">
+                                <span class="input-group-text">điểm</span>
+                            </div>
+
+                            <div class="text-success small mt-1">
+                                <i class="bi bi-plus-circle"></i> Sẽ tích thêm sau thanh
+                                toán: <strong>+{{ pointsEarned }} điểm</strong>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="form-group">
-                        <label>Phương thức thanh toán</label>
+                    <div class="mb-4 p-3 bg-white rounded border shadow-sm">
+                        <div class="d-flex justify-content-between text-muted mb-2">
+                            <span>Tổng tiền món:</span>
+                            <span>{{ formatCurrency(totalOrderedPrice) }}</span>
+                        </div>
+                        <div v-if="discountAmount > 0"
+                            class="d-flex justify-content-between text-success mb-2 border-bottom pb-2">
+                            <span>Giảm giá (Từ {{ pointsToUse }} điểm):</span>
+                            <span>- {{ formatCurrency(discountAmount) }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-end mt-2">
+                            <span class="fw-bold text-dark">KHÁCH CẦN TRẢ:</span>
+                            <h3 class="text-danger fw-bold m-0">{{
+                                formatCurrency(finalAmountToPay) }}</h3>
+                        </div>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label class="mb-1 text-muted">Phương thức thanh toán</label>
                         <select v-model="checkoutForm.payment_method" class="form-select">
                             <option value="cash">Tiền mặt</option>
                             <option value="transfer">Chuyển khoản</option>
@@ -165,16 +225,15 @@
                         </select>
                     </div>
 
-                    <div class="form-group mt-3">
-                        <label>Ghi chú thu ngân (Tùy chọn)</label>
+                    <div class="form-group mb-3">
                         <textarea v-model="checkoutForm.note" rows="2" class="form-control"
-                            placeholder="Ví dụ: Khách yêu cầu xuất VAT..."></textarea>
+                            placeholder="Ghi chú thu ngân (Tùy chọn)..."></textarea>
                     </div>
 
-                    <div class="modal-actions mt-4">
-                        <button type="button" class="btn-cancel" @click="showCheckoutModal = false"
+                    <div class="modal-actions mt-4 d-flex gap-2">
+                        <button type="button" class="btn btn-light border flex-fill" @click="showCheckoutModal = false"
                             :disabled="isSubmitting">Hủy</button>
-                        <button type="submit" class="btn-confirm bg-success" :disabled="isSubmitting">
+                        <button type="submit" class="btn btn-success flex-fill fw-bold" :disabled="isSubmitting">
                             {{ isSubmitting ? 'Đang xử lý...' : 'Xác nhận Thu tiền' }}
                         </button>
                     </div>
@@ -194,11 +253,116 @@ const router = useRouter();
 const orderedItems = ref([]);
 const showCheckoutModal = ref(false);
 const isSubmitting = ref(false);
+const searchError = ref('');
 
 const checkoutForm = reactive({
     payment_method: "cash",
     note: ""
 });
+
+// --- STATE LÀM MỚI ---
+const isRefreshing = ref(false);
+
+// --- HÀM LÀM MỚI DỮ LIỆU ---
+const refreshData = async () => {
+    if (isRefreshing.value) return; // Tránh click liên tục
+    isRefreshing.value = true;
+
+    try {
+        const tableId = route.params.id;
+        if (tableId) {
+            // Tải lại thông tin bàn (và tự động tải lại các món đã gọi qua fetchActiveOrder)
+            await fetchTableDetail(tableId);
+        }
+        // Tải lại thực đơn (phòng khi có món mới vừa cập nhật trạng thái hết hàng)
+        await fetchMenuData();
+    } catch (error) {
+        console.error("Lỗi khi làm mới dữ liệu:", error);
+    } finally {
+        // Giữ hiệu ứng xoay tối thiểu 500ms để người dùng thấy có phản hồi mượt mà
+        setTimeout(() => {
+            isRefreshing.value = false;
+        }, 500);
+    }
+};
+
+// Thêm các biến quản lý khách hàng & điểm (đặt dưới isSubmitting)
+const customerPhone = ref('');
+const customerInfo = ref(null);
+const isSearchingCustomer = ref(false);
+const usePoints = ref(false);
+const pointsToUse = ref(0);
+
+// --- HÀM TÌM KHÁCH HÀNG ---
+const searchCustomer = async () => {
+    if (!customerPhone.value.trim()) {
+        searchError.value = "Vui lòng nhập số điện thoại.";
+        return;
+    }
+
+    isSearchingCustomer.value = true;
+    searchError.value = ''; // Reset lỗi trước khi tìm mới
+
+    try {
+        const response = await api.get(`/waiter/customers/search`, { params: { phone: customerPhone.value } });
+
+        if (response.data.success && response.data.customer) {
+            customerInfo.value = response.data.customer;
+            usePoints.value = false;
+            pointsToUse.value = 0;
+            searchError.value = ''; // Xóa lỗi nếu tìm thấy
+        } else {
+            // Thay thế alert bằng việc hiển thị text
+            searchError.value = "Không tìm thấy khách hàng với SĐT này.";
+            customerInfo.value = null;
+        }
+    } catch (error) {
+        console.error("Lỗi tìm khách hàng:", error);
+        // Thay thế alert bằng việc hiển thị text
+        searchError.value = "Có lỗi xảy ra khi kết nối máy chủ.";
+        customerInfo.value = null;
+    } finally {
+        isSearchingCustomer.value = false;
+    }
+};
+
+// --- CÁC HÀM TÍNH TOÁN TIỀN & ĐIỂM ---
+
+// Số tiền được giảm (1 điểm = 100đ)
+const discountAmount = computed(() => {
+    if (!usePoints.value || !customerInfo.value) return 0;
+    return (pointsToUse.value || 0) * 100;
+});
+
+// Tiền khách thực tế phải trả
+const finalAmountToPay = computed(() => {
+    const final = totalOrderedPrice.value - discountAmount.value;
+    return final > 0 ? final : 0;
+});
+
+// Số điểm tích lũy được sau khi thanh toán hóa đơn này (10,000đ = 1 điểm)
+const pointsEarned = computed(() => {
+    return Math.floor(finalAmountToPay.value / 10000);
+});
+
+// Giới hạn số điểm tối đa khách được nhập
+const validatePoints = () => {
+    if (!customerInfo.value) return;
+
+    // Khách không thể dùng quá số điểm đang có
+    const maxPointsByBalance = customerInfo.value.points;
+    // Khách không thể dùng điểm giảm lố quá tổng tiền đơn hàng
+    const maxPointsByTotal = Math.floor(totalOrderedPrice.value / 100);
+
+    const maxAllowed = Math.min(maxPointsByBalance, maxPointsByTotal);
+
+    if (pointsToUse.value > maxAllowed) {
+        pointsToUse.value = maxAllowed;
+    } else if (pointsToUse.value < 0) {
+        pointsToUse.value = 0;
+    }
+};
+
 
 // ─── ĐÁNH DẤU MÓN ĐÃ LÊN BÀN ──────────────────────────────────
 const markAsServed = async (item) => {
@@ -229,28 +393,34 @@ const submitCheckout = async () => {
 
         const payload = {
             table_id: tableInfo.value.id,
-            amount: totalOrderedPrice.value,
+            amount: finalAmountToPay.value, // Tiền thực tế phải thu
+            original_amount: totalOrderedPrice.value, // Gửi thêm tổng tiền gốc để lưu hóa đơn
             payment_method: checkoutForm.payment_method,
-            note: checkoutForm.note
+            note: checkoutForm.note,
+            // Thêm các trường dữ liệu điểm gửi lên Server
+            customer_id: customerInfo.value?.id || null,
+            points_used: usePoints.value ? pointsToUse.value : 0,
+            discount_amount: discountAmount.value,
+            points_earned: pointsEarned.value
         };
 
-        // GỌI API THANH TOÁN (Bạn cần viết endpoint này ở Laravel Backend)
         const response = await api.post('/waiter/checkout', payload);
 
         if (response.data.success) {
             alert("🎉 Thanh toán thành công! Bàn đã được dọn trống.");
 
-            // Reset trạng thái trên giao diện
             showCheckoutModal.value = false;
-            tableInfo.value.status = 'available'; // Trả bàn về trạng thái trống
-            orderedItems.value = []; // Xóa hóa đơn
+            tableInfo.value.status = 'available';
+            orderedItems.value = [];
 
-            // Đưa form về mặc định
             checkoutForm.payment_method = 'cash';
             checkoutForm.note = '';
 
-            // Tùy chọn: Chuyển hướng phục vụ về trang sơ đồ bàn
-            // router.push('/waiter/tables'); 
+            // Reset dữ liệu khách hàng
+            customerPhone.value = '';
+            customerInfo.value = null;
+            usePoints.value = false;
+            pointsToUse.value = 0;
         } else {
             alert("Lỗi: " + (response.data.message || "Không thể thanh toán"));
         }
@@ -261,6 +431,8 @@ const submitCheckout = async () => {
         isSubmitting.value = false;
     }
 };
+
+
 // Thông tin bàn
 const tableName = ref('Đang tải...');
 const tableInfo = ref(null);
@@ -509,7 +681,7 @@ const sendOrderToKitchen = async () => {
 
             // QUAN TRỌNG: Gọi lại hàm lấy danh sách món để giao diện cập nhật ngay lập tức
             fetchActiveOrder(tableInfo.value.id);
-            
+
         } else {
             alert(response.data.message || 'Có lỗi xảy ra khi gửi order!');
         }
@@ -741,5 +913,20 @@ const getStatusText = (status) => {
 .btn-confirm:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+}
+/* --- HIỆU ỨNG XOAY CHO NÚT LÀM MỚI --- */
+.spin-anim {
+    display: inline-block;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
 }
 </style>

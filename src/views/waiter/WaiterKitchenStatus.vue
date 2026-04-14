@@ -7,7 +7,7 @@
             </button>
         </div>
 
-        <div v-if="items.length === 0" class="text-center my-5 py-5 bg-white rounded shadow-sm">
+        <div v-if="Object.keys(groupedItems).length === 0" class="text-center my-5 py-5 bg-white rounded shadow-sm">
             <i class="bi bi-check-circle fs-1 text-muted"></i>
             <h4 class="mt-3 text-muted">Tuyệt vời!</h4>
             <p>Tất cả các món đã được bưng lên bàn cho khách.</p>
@@ -63,8 +63,11 @@ let intervalId = null;
 const groupedItems = computed(() => {
     const groups = {};
     items.value.forEach(item => {
-        // Lấy tên bàn, nếu không có thì gán là 'Khách mang đi'
-        const tableName = item.order?.table?.name || 'Khách mang đi';
+        // Lấy tên bàn từ dữ liệu order
+        const tableName = item.order?.table?.name;
+
+        // BỎ QUA: Nếu không có tên bàn (Khách mang đi) thì không đưa vào danh sách hiển thị
+        if (!tableName) return;
 
         // Nếu tên bàn chưa có trong mảng groups thì tạo mới
         if (!groups[tableName]) {
@@ -77,6 +80,7 @@ const groupedItems = computed(() => {
     return groups;
 });
 // ────────────────────────────────────────────────────────────
+
 
 const fetchReadyItems = async () => {
     try {

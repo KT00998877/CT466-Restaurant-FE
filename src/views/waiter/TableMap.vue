@@ -11,8 +11,8 @@
         <div class="status-legend mb-4 d-flex flex-wrap gap-3">
             <div class="legend-item"><span class="status-dot available"></span> Trống</div>
             <div class="legend-item"><span class="status-dot occupied"></span> Đang phục vụ</div>
-            <div class="legend-item"><span class="status-dot reserved"></span> Đã đặt trước</div>
-            <div class="legend-item"><span class="status-dot cleaning"></span> Đang dọn</div>
+            <!-- <div class="legend-item"><span class="status-dot reserved"></span> Đã đặt trước</div>
+            <div class="legend-item"><span class="status-dot cleaning"></span> Đang dọn</div> -->
         </div>
 
         <div class="tables-grid">
