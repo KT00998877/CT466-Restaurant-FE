@@ -1,295 +1,149 @@
 <template>
-    <div class="cashier-layout">
-        <aside class="sidebar" :class="{ 'sidebar-closed': !isSidebarOpen }">
-            <div class="sidebar-header">
-                <span v-if="isSidebarOpen" class="logo-text text-success">CASHIER PANEL</span>
-                <span v-else class="logo-icon text-success">CP</span>
+    <div class="panel-layout cashier-theme">
+        <!-- Sidebar -->
+        <aside class="panel-sidebar" :class="{ collapsed: !isSidebarOpen }">
+            <!-- Logo -->
+            <div class="panel-logo">
+                <div class="panel-logo__mark">
+                    <div class="panel-logo__icon">
+                        <i class="bi bi-cash-coin"></i>
+                    </div>
+                    <div class="panel-logo__texts">
+                        <span class="panel-logo__title">Cashier Panel</span>
+                        <span class="panel-logo__sub">Thu ngân</span>
+                    </div>
+                </div>
             </div>
 
-            <ul class="sidebar-menu">
+            <!-- Nav -->
+            <nav class="panel-nav">
+                <div class="panel-nav__section">
+                    <span v-if="isSidebarOpen" class="panel-nav__label">Nghiệp vụ</span>
+                    <router-link to="/cashier/orders" class="panel-nav__item" title="Đơn hàng & Thanh toán">
+                        <i class="bi bi-receipt panel-nav__icon"></i>
+                        <span class="panel-nav__text">Đơn hàng & Thanh toán</span>
+                    </router-link>
+                    <router-link to="/cashier/reservations" class="panel-nav__item" title="Quản lý Đặt bàn">
+                        <i class="bi bi-calendar-check panel-nav__icon"></i>
+                        <span class="panel-nav__text">Quản lý Đặt bàn</span>
+                    </router-link>
+                </div>
+            </nav>
 
-                <li>
-                    <router-link to="/cashier/orders" title="Quản lý Hoá đơn & Thanh toán">
-                        <i class="bi bi-receipt"></i>
-                        <span v-if="isSidebarOpen">Đơn hàng & Thanh toán</span>
-                    </router-link>
-                </li>
-                <li>
-                    <router-link to="/cashier/reservations" title="Quản lý Đặt bàn">
-                        <i class="bi bi-calendar-check"></i>
-                        <span v-if="isSidebarOpen">Quản lý Đặt bàn</span>
-                    </router-link>
-                </li>
-            </ul>
+            <!-- Footer user -->
+            <div class="panel-footer">
+                <div class="panel-user" @click="toggleUserDropdown" ref="userRef">
+                    <div class="panel-user__avatar">{{ userInitials }}</div>
+                    <div class="panel-user__info">
+                        <span class="panel-user__name">{{ user?.name || 'Thu Ngân' }}</span>
+                        <span class="panel-user__role">Thu ngân</span>
+                    </div>
+                    <i class="bi bi-three-dots-vertical panel-user__dots"></i>
+
+                    <div class="panel-user__dropdown" :class="{ show: isUserDropdownOpen }">
+                        <router-link to="/" class="panel-dropdown__item">
+                            <i class="bi bi-shop"></i> Xem trang web
+                        </router-link>
+                        <div class="panel-dropdown__divider"></div>
+                        <a href="#" class="panel-dropdown__item panel-dropdown__item--danger"
+                            @click.prevent="handleLogout">
+                            <i class="bi bi-box-arrow-right"></i> Đăng xuất
+                        </a>
+                    </div>
+                </div>
+            </div>
         </aside>
 
-        <div class="main-wrapper">
-            <header class="cashier-header">
-                <div class="hamburger" @click="toggleSidebar">
-                    <i class="bi bi-list fs-3"></i>
+        <!-- Main -->
+        <div class="panel-main">
+            <!-- Topbar -->
+            <header class="panel-header">
+                <button class="panel-header__toggle" @click="toggleSidebar">
+                    <i class="bi bi-list"></i>
+                </button>
+                <div class="panel-header__breadcrumb">
+                    <span class="panel-header__breadcrumb-parent">Thu ngân</span>
+                    <i class="bi bi-chevron-right panel-header__breadcrumb-sep"></i>
+                    <span class="panel-header__breadcrumb-current">{{ currentPageTitle }}</span>
                 </div>
-
-                <div class="nav-actions d-flex align-items-center gap-3">
-                    <router-link to="/" class="btn btn-outline-secondary btn-sm me-2">
-                        <i class="bi bi-shop me-1"></i> Xem trang web
-                    </router-link>
-
-                    <div class="user-dropdown position-relative">
-                        <div class="user-info" @click="toggleUserDropdown">
-                            <div class="d-none d-md-flex flex-column text-end me-2">
-                                <span class="fw-bold lh-1">{{ user?.name || 'Cashier' }}</span>
-                                <small class="text-success fw-medium">Thu ngân</small>
-                            </div>
-                            <i class="bi bi-person-badge fs-3 text-success"></i>
-                        </div>
-
-                        <ul class="user-dropdown-content" :class="{ show: isUserDropdownOpen }">
-                            <li class="user-name d-md-none">
-                                Xin chào, {{ user?.name }}
-                                <span class="badge bg-success mt-1">Thu ngân</span>
-                            </li>
-                            <li>
-                                <a href="#" @click.prevent="handleLogout">
-                                    <i class="bi bi-box-arrow-right me-2"></i>Đăng xuất
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
+                <div class="panel-header__actions">
+                    <span class="panel-header__role-badge">
+                        <i class="bi bi-cash-coin me-1"></i> Thu ngân
+                    </span>
                 </div>
             </header>
 
-            <main class="cashier-content">
+            <main class="panel-content">
                 <router-view></router-view>
             </main>
         </div>
+
+        <!-- Mobile overlay -->
+        <div v-if="!isSidebarOpen === false && isMobile" class="panel-overlay" @click="toggleSidebar"></div>
     </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import { useAuth } from '@/composables/useAuth';
+import '@/assets/panel-layout.css';
 
 const router = useRouter();
+const route = useRoute();
 const { user, logout } = useAuth();
 
-// Mặc định mở Sidebar trên Desktop, đóng trên Mobile
+const isMobile = ref(window.innerWidth <= 768);
 const isSidebarOpen = ref(window.innerWidth > 768);
 const isUserDropdownOpen = ref(false);
+const userRef = ref(null);
 
-const toggleSidebar = () => {
-    isSidebarOpen.value = !isSidebarOpen.value;
+const pageMap = {
+    '/cashier/orders': 'Đơn hàng & Thanh toán',
+    '/cashier/reservations': 'Quản lý Đặt bàn',
 };
+const currentPageTitle = computed(() => pageMap[route.path] || 'Cashier');
 
-const toggleUserDropdown = (event) => {
-    event.preventDefault();
+const userInitials = computed(() => {
+    const name = user?.value?.name || 'TN';
+    return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+});
+
+const toggleSidebar = () => { isSidebarOpen.value = !isSidebarOpen.value; };
+const toggleUserDropdown = (e) => {
+    e.stopPropagation();
     isUserDropdownOpen.value = !isUserDropdownOpen.value;
 };
-
 const handleLogout = async () => {
     isUserDropdownOpen.value = false;
-    try {
-        await logout();
-    } finally {
-        router.push('/login');
-    }
+    try { await logout(); } finally { router.push('/login'); }
 };
 
-// Đóng dropdown khi click ra ngoài
-const closeClickOutside = (e) => {
-    if (!e.target.closest('.user-dropdown')) {
+const onResize = () => {
+    isMobile.value = window.innerWidth <= 768;
+    isSidebarOpen.value = window.innerWidth > 768;
+};
+const onClickOutside = (e) => {
+    if (userRef.value && !userRef.value.contains(e.target)) {
         isUserDropdownOpen.value = false;
     }
 };
 
 onMounted(() => {
-    window.addEventListener('click', closeClickOutside);
-    // Tự động điều chỉnh sidebar khi resize màn hình
-    window.addEventListener('resize', () => {
-        if (window.innerWidth <= 768) isSidebarOpen.value = false;
-        else isSidebarOpen.value = true;
-    });
+    window.addEventListener('resize', onResize);
+    window.addEventListener('click', onClickOutside);
 });
-
 onUnmounted(() => {
-    window.removeEventListener('click', closeClickOutside);
+    window.removeEventListener('resize', onResize);
+    window.removeEventListener('click', onClickOutside);
 });
 </script>
 
 <style scoped>
-.cashier-layout {
-    display: flex;
-    min-height: 100vh;
-    background-color: #f8f9fa;
-}
-
-/* ================= SIDEBAR ================= */
-.sidebar {
-    width: 260px;
-    background-color: #2c3e50;
-    /* Thay đổi một chút màu nền để phân biệt với Admin */
-    color: #ecf0f1;
-    transition: width 0.3s ease;
-    display: flex;
-    flex-direction: column;
-    flex-shrink: 0;
-    z-index: 1000;
-}
-
-.sidebar-closed {
-    width: 70px;
-}
-
-.sidebar-header {
-    height: 60px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: #1a252f;
-    border-bottom: 1px solid #34495e;
-}
-
-.logo-text {
-    font-size: 1.2rem;
-    font-weight: bold;
-    letter-spacing: 1px;
-}
-
-.logo-icon {
-    font-size: 1.5rem;
-    font-weight: bold;
-}
-
-.sidebar-menu {
-    list-style: none;
-    padding: 10px 0;
-    margin: 0;
-}
-
-.sidebar-menu li a {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    padding: 15px 20px;
-    color: #ecf0f1;
-    text-decoration: none;
-    font-size: 1rem;
-    transition: all 0.3s;
-    white-space: nowrap;
-    overflow: hidden;
-}
-
-.sidebar-closed .sidebar-menu li a {
-    justify-content: center;
-    padding: 15px 0;
-}
-
-.sidebar-menu li a i {
-    font-size: 1.3rem;
-}
-
-.sidebar-menu li a:hover,
-.sidebar-menu li a.router-link-exact-active {
-    background-color: #27ae60;
-    /* Đổi màu active sang xanh lá (màu thường thấy của thu ngân/tiền bạc) */
-    color: white;
-}
-
-/* ================= MAIN WRAPPER ================= */
-.main-wrapper {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-}
-
-/* ================= HEADER ================= */
-.cashier-header {
-    height: 60px;
-    background-color: white;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 20px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-    z-index: 999;
-}
-
-.hamburger {
-    cursor: pointer;
-    color: #333;
-}
-
-.user-info {
-    display: flex;
-    align-items: center;
-    cursor: pointer;
-}
-
-/* ================= DROPDOWN ================= */
-.user-dropdown-content {
-    display: none;
-    position: absolute;
-    top: 100%;
-    right: 0;
-    background: white;
-    min-width: 200px;
-    border-radius: 8px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-    margin-top: 15px;
-    padding: 10px 0;
-    list-style: none;
-}
-
-.user-dropdown-content.show {
-    display: block;
-}
-
-.user-dropdown-content .user-name {
-    padding: 10px 20px;
-    font-weight: bold;
-    color: #27ae60;
-    border-bottom: 1px solid #eee;
-    margin-bottom: 5px;
-    display: flex;
-    flex-direction: column;
-}
-
-.user-dropdown-content li a {
-    display: block;
-    padding: 12px 20px;
-    color: #444;
-    text-decoration: none;
-    transition: 0.2s;
-}
-
-.user-dropdown-content li a:hover {
-    background: #e8f8f5;
-    color: #27ae60;
-}
-
-/* ================= CONTENT SLOT ================= */
-.cashier-content {
-    flex: 1;
-    padding: 25px;
-    overflow-y: auto;
-}
-
-/* ================= RESPONSIVE ================= */
-@media (max-width: 768px) {
-    .sidebar {
-        position: fixed;
-        height: 100vh;
-        left: -260px;
-    }
-
-    .sidebar:not(.sidebar-closed) {
-        left: 0;
-        width: 260px;
-    }
-
-    .main-wrapper {
-        width: 100%;
-    }
+/* Override accent → xanh lá cho Cashier */
+.cashier-theme {
+    --accent-color: #27ae60;
+    --accent-hover: #1e8449;
+    --accent-light: rgba(39, 174, 96, 0.12);
 }
 </style>
