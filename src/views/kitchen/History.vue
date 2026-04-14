@@ -22,7 +22,7 @@
                             </tr>
                             <tr v-for="item in items" :key="item.id">
                                 <td>{{ formatTime(item.updated_at) }}</td>
-                                <td><span class="badge bg-dark">{{ item.order?.table?.name || 'N/A' }}</span></td>
+                                <td><span class="badge bg-dark">{{ item.order?.table?.name || 'Mang đi' }}</span></td>
                                 <td class="fw-bold text-primary">{{ item.item_name }}</td>
                                 <td>{{ item.quantity }}</td>
                                 <td class="fst-italic text-muted">{{ item.note || '-' }}</td>

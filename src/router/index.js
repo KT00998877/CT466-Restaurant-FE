@@ -15,6 +15,8 @@ import TermsOfService from "../views/user/TermsOfService.vue";
 import RefundPolicy from "../views/user/RefundPolicy.vue";
 import ShippingPolicy from "../views/user/ShippingPolicy.vue";
 import UserProfile from "../views/user/UserProfile.vue";
+import FeaturedMenu from "../views/user/FeaturedMenu.vue";
+import DailySpecials from "../views/user/DailySpecialMenu.vue";
 
 // --- Import Layouts ---
 import AdminLayout from "../views/layouts/AdminLayout.vue";
@@ -33,6 +35,7 @@ import KitchenLayout from "../views/layouts/KitchenLayout.vue";
 import PendingOrders from "../views/kitchen/Pending.vue";
 import History from "../views/kitchen/History.vue";
 import Ingredient from "../views/kitchen/Ingredient.vue";
+import KitchenMenu from "../views/kitchen/KitchenMenu.vue";
 
 // --- Import Admin Components ---
 import Dashboard from "../views/admin/Dashboard.vue";
@@ -43,9 +46,16 @@ import UserManagement from "../views/admin/UserManagement.vue";
 import IngredientManager from "../views/admin/IngredientManager.vue";
 import AdminInventory from "../views/admin/AdminInventory.vue";
 import AdminReport from "../views/admin/AdminReport.vue";
-
+import DishManagement from "../views/admin/DishManagement.vue";
+import ContactManagement from "../views/admin/ContactManagement.vue";
 
 const routes = [
+  {
+    path: "/",
+    name: "Home",
+    component: HomeView,
+    
+  },
   // ─── AUTH (GUEST) ──────────────────────────────────────────
   {
     path: "/login",
@@ -61,7 +71,7 @@ const routes = [
   },
 
   // ─── USER (PUBLIC) ─────────────────────────────────────────
-  { path: "/", name: "home", component: HomeView },
+  
   {
     path: "/about",
     name: "about",
@@ -88,6 +98,16 @@ const routes = [
     path: "/payment-return",
     name: "payment-return",
     component: () => import("../views/user/PaymentReturn.vue"),
+  },
+  {
+    path: "/featured",
+    name: "featured-menu",
+    component: FeaturedMenu,
+  },
+  {
+    path: "/daily-specials",
+    name: "daily-specials",
+    component: DailySpecials,
   },
 
   // ─── USER (YÊU CẦU ĐĂNG NHẬP) ──────────────────────────────
@@ -186,7 +206,8 @@ const routes = [
     children: [
       { path: "pending", name: "kitchen-pending", component: PendingOrders },
       { path: "history", name: "kitchen-history", component: History },
-      { path: "ingredients", name: "kitchen-ingredients", component: Ingredient }
+      { path: "ingredients", name: "kitchen-ingredients", component: Ingredient },
+      { path: "menu", name: "kitchen-menu", component: KitchenMenu }
 
     ]
 },
@@ -208,7 +229,9 @@ const routes = [
       { path: "users", name: "admin-users", component: UserManagement },
       { path: "ingredients", name: "admin-ingredients", component: IngredientManager },
       { path: "inventory", name: "admin-inventory", component: AdminInventory },
-      { path: "reports", name: "admin-reports", component: AdminReport }
+      { path: "reports", name: "admin-reports", component: AdminReport },
+      { path: "dishes", name: "admin-dishes", component: DishManagement },
+      { path: "contacts", name: "admin-contacts", component: ContactManagement },
     ],
   },
 
@@ -226,32 +249,35 @@ router.beforeEach((to, from, next) => {
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("user_role");
 
-  // 1. Trạng thái GUEST: Đã login rồi thì đẩy về đúng trang làm việc của từng người
-  if (to.meta.guest && token) {
-    if (role === "admin") return next("/admin/dashboard");
-    if (role === "cashier") return next("/cashier/orders"); // Thu ngân vào thẳng trang quản lý hoá đơn
-    return next("/"); // Khách hàng đẩy về trang chủ
+  // ĐIỀU KIỆN 1: Nếu vào trang chủ "/" -> CHO QUA LUÔN (Không check token)
+  if (to.path === "/") {
+    return next();
   }
 
-  // 2. Trạng thái REQUIRES AUTH: Yêu cầu đăng nhập
+  // ĐIỀU KIỆN 2: Nếu đã đăng nhập mà cố tình vào Login/Register -> Đẩy về Dashboard tương ứng
+  if (to.meta.guest && token) {
+    if (role === "admin") return next("/admin/dashboard");
+    if (role === "cashier") return next("/cashier/orders");
+    if (role === "waiter") return next("/waiter/tables");
+    if (role === "kitchen") return next("/kitchen/pending");
+    return next("/"); 
+  }
+
+  // ĐIỀU KIỆN 3: Nếu trang yêu cầu đăng nhập (requiresAuth)
   if (to.meta.requiresAuth) {
-    if (!token) return next("/login");
+    if (!token) {
+      // Nếu chưa có token thì mới đẩy về login
+      return next("/login");
+    }
 
-    // Kiểm tra phân quyền: Nếu route yêu cầu role cụ thể
-    if (to.meta.role) {
-      // Nếu trang yêu cầu admin nhưng người dùng không phải admin
-      if (to.meta.role === "admin" && role !== "admin") {
-        return next("/"); // Đuổi về trang chủ
-      }
-
-      // Nếu trang yêu cầu cashier nhưng người dùng không phải cashier
-      if (to.meta.role === "cashier" && role !== "cashier") {
-        if (role === "admin") return next("/admin/dashboard"); // Admin đi lạc vào link thu ngân thì trả về nhà Admin
-        return next("/"); // Khách đi lạc thì đuổi về trang chủ
-      }
+    // Kiểm tra quyền (Role)
+    if (to.meta.role && to.meta.role !== role) {
+      // Nếu đăng nhập rồi nhưng sai quyền (VD: User vào Admin) -> Đuổi về trang chủ
+      return next("/");
     }
   }
 
+  // Các trường hợp còn lại cho qua
   next();
 });
 

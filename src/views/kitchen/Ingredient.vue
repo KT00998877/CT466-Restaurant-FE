@@ -1,6 +1,6 @@
 <template>
     <div class="ingredient-manager p-4">
-        <h2 class="text-2xl font-bold mb-4">Quản lý Kho Nguyên Liệu</h2>
+        <h2 class="text-2xl font-bold mb-4"> Kho Nguyên Liệu</h2>
 
         <div v-if="lowStockIngredients.length > 0"
             class="alert alert-warning bg-yellow-100 p-4 rounded mb-6 border border-yellow-300">
