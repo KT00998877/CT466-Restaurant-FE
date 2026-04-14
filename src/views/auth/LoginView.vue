@@ -1,86 +1,95 @@
-<template>
+<<template>
     <div class="auth-page">
-        <div class="auth-card">
-            <h1 class="auth-title">Đăng Nhập</h1>
+        <div class="d-flex flex-column align-items-center">
 
-            <div v-if="errorMsg" class="alert alert-error">{{ errorMsg }}</div>
+            <div class="text-center text-white mb-4">
+                <h2 class="fw-bold display-6 mb-2">Chào mừng quý khách đến với </h2>
+                <h3 class="fw-bold  mb-3">Nhà Hàng của chúng tôi</h3>
+                <p class="fs-6 opacity-75">Rất hân hạnh được phục vụ quý khách</p>
+            </div>
 
-            <form @submit.prevent="handleLogin">
-                <div class="form-group">
-                    <label>Email</label>
-                    <input v-model="form.email" type="email" placeholder="you@example.com"
-                        :class="{ error: errors.email }" autocomplete="email" />
-                    <span v-if="errors.email" class="field-error">{{ errors.email[0] }}</span>
-                </div>
+            <div class="auth-card">
+                <h1 class="auth-title">Đăng Nhập</h1>
+                <div v-if="errorMsg" class="alert alert-error">{{ errorMsg }}</div>
 
-                <div class="form-group">
-                    <label>Mật khẩu</label>
-                    <input v-model="form.password" type="password" placeholder="••••••••"
-                        :class="{ error: errors.password }" autocomplete="current-password" />
-                    <span v-if="errors.password" class="field-error">{{ errors.password[0] }}</span>
-                </div>
+                <form @submit.prevent="handleLogin">
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input v-model="form.email" type="email" placeholder="you@example.com"
+                            :class="{ error: errors.email }" autocomplete="email" />
+                        <span v-if="errors.email" class="field-error">{{ errors.email[0] }}</span>
+                    </div>
 
-                <button type="submit" class="btn-primary" :disabled="loading">
-                    <span v-if="loading" class="spinner"></span>
-                    {{ loading ? 'Đang xử lý...' : 'Đăng Nhập' }}
-                </button>
-            </form>
+                    <div class="form-group">
+                        <label>Mật khẩu</label>
+                        <input v-model="form.password" type="password" placeholder="••••••••"
+                            :class="{ error: errors.password }" autocomplete="current-password" />
+                        <span v-if="errors.password" class="field-error">{{ errors.password[0] }}</span>
+                    </div>
 
-            <p class="auth-footer">
-                Chưa có tài khoản?
-                <router-link to="/register">Đăng ký ngay</router-link>
-            </p>
+                    <button type="submit" class="btn-primary" :disabled="loading">
+                        <span v-if="loading" class="spinner"></span>
+                        {{ loading ? 'Đang xử lý...' : 'Đăng Nhập' }}
+                    </button>
+                </form>
+
+                <p class="auth-footer">
+                    Chưa có tài khoản?
+                    <router-link to="/register">Đăng ký ngay</router-link>
+                </p>
+            </div>
         </div>
     </div>
 </template>
 
-<script setup>
-import { ref, reactive } from 'vue'
-import { useRouter } from 'vue-router'
-import { useAuth } from '@/composables/useAuth'
+    <script setup>
+    import { ref, reactive } from 'vue'
+    import { useRouter } from 'vue-router'
+    import { useAuth } from '@/composables/useAuth'
 
-const router = useRouter()
-const { login } = useAuth()
 
-const form = reactive({ email: '', password: '' })
-const loading = ref(false)
-const errorMsg = ref('')
-const errors = ref({})
+    const router = useRouter()
+    const { login } = useAuth()
 
-async function handleLogin() {
-    loading.value = true
-    errorMsg.value = ''
-    errors.value = {}
+    const form = reactive({ email: '', password: '' })
+    const loading = ref(false)
+    const errorMsg = ref('')
+    const errors = ref({})
 
-    try {
-        // Giả sử hàm login của bạn trả về data từ axios (response.data)
-        const data = await login(form)
+    async function handleLogin() {
+        loading.value = true
+        errorMsg.value = ''
+        errors.value = {}
 
-        // Lấy role từ thông tin user trả về
-        const role = data.user?.role
+        try {
+            // Giả sử hàm login của bạn trả về data từ axios (response.data)
+            const data = await login(form)
 
-        if (role === 'admin') {
-            router.push('/admin')
-        } else if (role === 'cashier') {
-            router.push('/cashier')
-        } else if (role === 'waiter') {
-            router.push('/waiter')
-        } else if (role === 'kitchen') {
-            router.push('/kitchen')
-        } else {
-            router.push('/') 
+            // Lấy role từ thông tin user trả về
+            const role = data.user?.role
+
+            if (role === 'admin') {
+                router.push('/admin')
+            } else if (role === 'cashier') {
+                router.push('/cashier')
+            } else if (role === 'waiter') {
+                router.push('/waiter')
+            } else if (role === 'kitchen') {
+                router.push('/kitchen')
+            } else {
+                router.push('/')
+            }
+
+        } catch (err) {
+            if (err.response?.status === 422) {
+                errors.value = err.response.data.errors || {}
+            } else {
+                errorMsg.value = err.response?.data?.message || 'Đã xảy ra lỗi, vui lòng thử lại.'
+            }
+        } finally {
+            loading.value = false
         }
-
-    } catch (err) {
-        if (err.response?.status === 422) {
-            errors.value = err.response.data.errors || {}
-        } else {
-            errorMsg.value = err.response?.data?.message || 'Đã xảy ra lỗi, vui lòng thử lại.'
-        }
-    } finally {
-        loading.value = false
     }
-}
 </script>
 
-<style scoped src="@/assets/auth.css"></style>
+    <style scoped src="@/assets/auth.css"></style>
