@@ -15,6 +15,7 @@
                             <th>ID</th>
                             <th>Tên Nguyên Liệu</th>
                             <th>Đơn vị</th>
+                            <th>Giá tham khảo</th>
                             <th>Tồn kho hiện tại</th>
                             <th>Mức cảnh báo</th>
                             <th>Thao tác Kho</th>
@@ -25,7 +26,7 @@
                             <td>{{ item.id }}</td>
                             <td class="fw-bold text-primary text-start">{{ item.name }}</td>
                             <td>{{ item.unit }}</td>
-
+                            <td class="text-muted">{{ formatCurrency(item.price) }}</td>
                             <td class="fw-bold"
                                 :class="item.stock_quantity <= item.reorder_level ? 'text-danger fs-5' : 'text-success'">
                                 {{ item.stock_quantity }}
@@ -79,6 +80,21 @@
                                 class="form-control form-control-lg" required placeholder="Vd: 5.5">
                         </div>
 
+                        <div class="col-md-6 form-group" v-if="transactionForm.type === 'import'">
+                            <label class="fw-bold text-muted mb-1">Đơn giá nhập (VNĐ / {{ selectedItem.unit }})</label>
+                            <input type="number" min="0" step="1000" v-model="transactionForm.price"
+                                class="form-control form-control-lg" required>
+                            <small class="text-muted">Hệ thống sẽ cập nhật giá này làm giá tham khảo mới.</small>
+                        </div>
+
+                        <div class="col-md-6 form-group d-flex flex-column justify-content-center"
+                            v-if="transactionForm.type === 'import'">
+                            <label class="fw-bold text-muted mb-1">Tổng tiền thanh toán</label>
+                            <div class="h4 text-danger fw-bold mb-0">
+                                {{ formatCurrency((transactionForm.quantity || 0) * (transactionForm.price || 0)) }}
+                            </div>
+                        </div>
+
                         <div class="col-12 form-group mt-3">
                             <label class="fw-bold text-muted mb-1">Lý do / Ghi chú (Bắt buộc)</label>
                             <textarea v-model="transactionForm.note" class="form-control" rows="2" required
@@ -100,7 +116,7 @@
         </div>
 
         <div v-if="showHistoryModal" class="modal-overlay" @click.self="showHistoryModal = false">
-            <div class="modal-content modal-lg">
+            <div class="modal-content modal-xl">
                 <div class="modal-header border-bottom mb-3 pb-3 d-flex justify-content-between align-items-center">
                     <h4 class="mb-0 fw-bold">Lịch sử Kho: <span class="text-primary">{{ selectedItem.name }}</span></h4>
                     <button class="btn-close" @click="showHistoryModal = false"></button>
@@ -121,6 +137,8 @@
                                 <th>Thời gian</th>
                                 <th>Loại</th>
                                 <th>Số lượng</th>
+                                <th>Đơn giá</th>
+                                <th>Tổng tiền</th>
                                 <th>Tồn sau GD</th>
                                 <th>Lý do</th>
                             </tr>
@@ -136,6 +154,8 @@
                                 <td class="fw-bold" :class="h.type === 'import' ? 'text-success' : 'text-danger'">
                                     {{ h.type === 'import' ? '+' : '-' }}{{ h.quantity }}
                                 </td>
+                                <td class="text-muted">{{ formatCurrency(h.unit_price) }}</td>
+                                <td class="fw-bold">{{ formatCurrency(h.total_price) }}</td>
                                 <td class="fw-bold text-primary">{{ h.stock_after }}</td>
                                 <td class="text-start small fst-italic">{{ h.note }}</td>
                             </tr>
@@ -166,8 +186,15 @@ const isLoadingHistory = ref(false);
 const transactionForm = reactive({
     type: 'import',
     quantity: '',
+    price: 0, // THÊM MỚI
     note: ''
 });
+
+// --- HELPER FORMAT TIỀN TỆ ---
+const formatCurrency = (val) => {
+    if (val === null || val === undefined) return '0 đ';
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
+};
 
 // --- LẤY DANH SÁCH NGUYÊN LIỆU ---
 const fetchIngredients = async () => {
@@ -186,6 +213,7 @@ const openTransactionModal = (item) => {
     selectedItem.value = item;
     transactionForm.type = 'import';
     transactionForm.quantity = '';
+    transactionForm.price = item.price || 0; // Gán giá mặc định của nguyên liệu vào form
     transactionForm.note = '';
     showTransactionModal.value = true;
 };
@@ -200,16 +228,25 @@ const submitTransaction = async () => {
 
     try {
         isSubmitting.value = true;
-        const res = await api.post(`/admin/ingredients/${selectedItem.value.id}/transaction`, {
+
+        // Chuẩn bị payload
+        const payload = {
             type: transactionForm.type,
             quantity: transactionForm.quantity,
             note: transactionForm.note
-        });
+        };
+
+        // Chỉ gửi giá tiền lên nếu là nhập hàng (xuất hàng thì backend tự lấy giá base)
+        if (transactionForm.type === 'import') {
+            payload.price = transactionForm.price;
+        }
+
+        const res = await api.post(`/admin/ingredients/${selectedItem.value.id}/transaction`, payload);
 
         if (res.data.success) {
             alert(res.data.message);
             showTransactionModal.value = false;
-            fetchIngredients(); // Tải lại danh sách để cập nhật số tồn kho mới
+            fetchIngredients(); // Tải lại danh sách để cập nhật số tồn kho và giá mới
         }
     } catch (error) {
         alert(error.response?.data?.message || "Có lỗi xảy ra khi lưu giao dịch!");
@@ -248,6 +285,7 @@ onMounted(() => {
     fetchIngredients();
 });
 </script>
+
 
 <style scoped>
 /* Tái sử dụng CSS Modal overlay tĩnh của bạn */

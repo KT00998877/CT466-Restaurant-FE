@@ -14,7 +14,7 @@
         </div>
 
         <div class="form-card bg-white p-4 rounded shadow mb-6">
-            <h3 class="font-bold mb-3">{{ isEditing ? 'Sửa nguyên liệu' : 'Thêm nguyên liệu mới' }}</h3>
+            <h3 class="font-bold mb-3">{{ isEditing ? 'Cập nhật nguyên liệu' : 'Thêm nguyên liệu mới' }}</h3>
             <form @submit.prevent="saveIngredient" class="flex gap-4 items-end">
                 <div>
                     <label class="block text-sm">Tên nguyên liệu</label>

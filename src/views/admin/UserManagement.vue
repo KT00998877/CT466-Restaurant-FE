@@ -35,6 +35,7 @@
                                 <th>Số điện thoại</th>
                                 <th>Vai trò</th>
                                 <th>Ngày tham gia</th>
+                                <th>Điểm tích luỹ</th>
                                 <th class="text-end">Thao tác</th>
                             </tr>
                         </thead>
@@ -58,6 +59,7 @@
                                 </td>
 
                                 <td class="small text-muted">{{ formatDate(user.created_at) }}</td>
+                                <td>{{ user.points || 0 }}</td>
 
                                 <td class="text-end">
                                     <button @click="openEditModal(user)" class="btn btn-sm btn-outline-secondary me-2"
@@ -106,7 +108,7 @@
                         <div class="mb-4">
                             <label class="form-label">Vai trò (Phân quyền) <span class="text-danger">*</span></label>
                             <select class="form-select" v-model="formData.role" required>
-                                <option value="customer">Khách hàng</option>
+                                <option value="user">Khách hàng</option>
                                 <option value="cashier">Thu ngân</option>
                                 <option value="waiter">Phục vụ</option>
                                 <option value="admin">Quản trị viên (Admin)</option>
@@ -160,7 +162,7 @@ const formData = ref({
     name: '',
     email: '',
     phone: '',
-    role: 'customer',
+    role: 'user',
     password: '' // Thêm trường mật khẩu
 });
 
@@ -210,7 +212,7 @@ const openAddModal = () => {
         name: '',
         email: '',
         phone: '',
-        role: 'customer',
+        role: 'user',
         password: ''
     };
     showModal.value = true;

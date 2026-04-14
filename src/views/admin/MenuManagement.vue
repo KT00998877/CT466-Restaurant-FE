@@ -28,19 +28,41 @@
                                 <th>Tên món</th>
                                 <th>Danh mục</th>
                                 <th>Giá</th>
+                                <th class="text-center">Đặc sắc</th>
+                                <th class="text-center">Món ngon</th>
                                 <th>Trạng thái</th>
                                 <th class="text-end">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr v-if="isLoading">
-                                <td colspan="6" class="text-center py-4">Đang tải dữ liệu...</td>
+                                <td colspan="8" class="text-center py-4">Đang tải dữ liệu...</td>
                             </tr>
                             <tr v-else v-for="item in menuItems" :key="item.id">
                                 <td>#{{ item.id }}</td>
                                 <td class="fw-bold">{{ item.name }}</td>
                                 <td>{{ item.category?.name || 'Chưa có' }}</td>
                                 <td>{{ formatPrice(item.price) }}</td>
+
+                                
+                                <td class="text-center">
+                                    <div class="form-check form-switch d-flex justify-content-center">
+                                        <input class="form-check-input" type="checkbox" role="switch"
+                                            v-model="item.is_featured" :true-value="1" :false-value="0"
+                                            @change="toggleHighlight(item, 'is_featured')"
+                                            :disabled="item.isUpdatingHighlight">
+                                    </div>
+                                </td>
+
+                               
+                                <td class="text-center">
+                                    <div class="form-check form-switch d-flex justify-content-center">
+                                        <input class="form-check-input" type="checkbox" role="switch"
+                                            v-model="item.is_daily_special" :true-value="1" :false-value="0"
+                                            @change="toggleHighlight(item, 'is_daily_special')"
+                                            :disabled="item.isUpdatingHighlight">
+                                    </div>
+                                </td>
 
                                 <td style="width: 200px;">
                                     <select v-model="item.status" class="form-select form-select-sm"
@@ -94,6 +116,21 @@
                                 </option>
                             </select>
                         </div>
+
+                        
+                        <div class="mb-3 d-flex gap-4">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="modalFeatured"
+                                    v-model="formData.is_featured" :true-value="1" :false-value="0">
+                                <label class="form-check-label" for="modalFeatured">Là Món đặc sắc</label>
+                            </div>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="modalDaily"
+                                    v-model="formData.is_daily_special" :true-value="1" :false-value="0">
+                                <label class="form-check-label" for="modalDaily">Là Món ngon mỗi ngày</label>
+                            </div>
+                        </div>
+
                         <div class="mb-3">
                             <label class="form-label">Mô tả</label>
                             <textarea class="form-control" v-model="formData.description" rows="3"></textarea>
@@ -127,7 +164,7 @@ const isLoading = ref(true);
 // -- STATE CHO TOAST THÔNG BÁO --
 const showToast = ref(false);
 const toastMessage = ref('');
-const toastType = ref('success'); // 'success' hoặc 'error'
+const toastType = ref('success');
 let toastTimeout = null;
 
 const triggerToast = (message, type = 'success') => {
@@ -142,27 +179,26 @@ const triggerToast = (message, type = 'success') => {
 };
 
 // ==========================================
-// STATE CHO MODAL (DÙNG CHUNG THÊM & SỬA)
+// STATE CHO MODAL
 // ==========================================
-const showModal = ref(false); // Thay thế cho showEditModal cũ
-const isEditMode = ref(false); // Cờ phân biệt: Sửa (true) hay Thêm mới (false)
+const showModal = ref(false);
+const isEditMode = ref(false);
 const isSaving = ref(false);
 
-const formData = ref({ // Thay thế cho editForm cũ
+const formData = ref({
     id: null,
     name: '',
     price: 0,
     category_id: null,
-    description: ''
+    description: '',
+    is_featured: 0,       // ---> THÊM MỚI
+    is_daily_special: 0   // ---> THÊM MỚI
 });
 
+const categories = ref([]);
 
-const categories = ref([]); // Chứa danh sách danh mục
-
-// Hàm lấy danh mục
 const fetchCategories = async () => {
     try {
-        // Tận dụng luôn API lấy danh mục ở trang người dùng bạn đã viết trước đó
         const response = await api.get('/menu');
         if (response.data.success) {
             categories.value = response.data.data;
@@ -174,12 +210,11 @@ const fetchCategories = async () => {
 
 onMounted(() => {
     fetchMenuItems();
-    fetchCategories(); // Gọi thêm hàm này khi load trang
+    fetchCategories();
 });
 
-const selectedFile = ref(null); // Biến lưu trữ file ảnh upload
+const selectedFile = ref(null);
 
-// Xử lý khi chọn file ảnh
 const handleFileUpload = (event) => {
     selectedFile.value = event.target.files[0];
 };
@@ -188,7 +223,6 @@ const handleFileUpload = (event) => {
 // CÁC HÀM GỌI API & LOGIC
 // ==========================================
 
-// Lấy danh sách món ăn
 const fetchMenuItems = async () => {
     isLoading.value = true;
     try {
@@ -196,7 +230,8 @@ const fetchMenuItems = async () => {
         if (response.data.success) {
             menuItems.value = response.data.data.map(item => ({
                 ...item,
-                isUpdating: false
+                isUpdating: false,
+                isUpdatingHighlight: false // ---> THÊM MỚI: Cờ loading riêng cho nút toggle nổi bật
             }));
         }
     } catch (error) {
@@ -206,7 +241,6 @@ const fetchMenuItems = async () => {
     }
 };
 
-// Đổi trạng thái trực tiếp
 const updateStatus = async (item) => {
     item.isUpdating = true;
     try {
@@ -225,7 +259,30 @@ const updateStatus = async (item) => {
     }
 };
 
-// Xóa món ăn
+// Hàm xử lý toggle cập nhật nhãn nổi bật trực tiếp trên bảng
+const toggleHighlight = async (item, field) => {
+    item.isUpdatingHighlight = true;
+    try {
+        const payload = {};
+        payload[field] = item[field]; // Sẽ gửi lên is_featured hoặc is_daily_special với giá trị 1 hoặc 0
+
+        // Đảm bảo URL này khớp với route bạn đã định nghĩa trong Laravel (thêm /admin/ nếu cần)
+        const response = await api.patch(`/admin/menu/${item.id}/highlights`, payload);
+
+        if (response.data.success) {
+            triggerToast('Cập nhật nhãn món ăn thành công!', 'success');
+        }
+    } catch (error) {
+        console.error('Lỗi khi cập nhật nhãn:', error);
+        triggerToast('Không thể cập nhật nhãn nổi bật!', 'error');
+
+        // Khôi phục lại trạng thái cũ trên UI nếu API lỗi
+        item[field] = item[field] === 1 ? 0 : 1;
+    } finally {
+        item.isUpdatingHighlight = false;
+    }
+};
+
 const deleteItem = async (id) => {
     if (!confirm('Bạn có chắc chắn muốn xóa món ăn này không? Hành động này không thể hoàn tác!')) return;
     try {
@@ -241,42 +298,41 @@ const deleteItem = async (id) => {
 };
 
 // ==========================================
-// LOGIC MODAL: MỞ, ĐÓNG VÀ SUBMIT
+// LOGIC MODAL
 // ==========================================
 
-// Mở Modal Thêm Mới
 const openAddModal = () => {
     isEditMode.value = false;
-    formData.value = { id: null, name: '', price: 0, category_id: null, description: '' };
+    // ---> THÊM MỚI: Reset cả 2 nhãn về 0
+    formData.value = { id: null, name: '', price: 0, category_id: null, description: '', is_featured: 0, is_daily_special: 0 };
     selectedFile.value = null;
     showModal.value = true;
 };
 
-// Mở Modal Chỉnh Sửa
 const openEditModal = (item) => {
     isEditMode.value = true;
+    // ---> THÊM MỚI: Gán dữ liệu nhãn từ item vào form
     formData.value = {
         id: item.id,
         name: item.name,
         price: item.price,
         category_id: item.category_id,
-        description: item.description || ''
+        description: item.description || '',
+        is_featured: item.is_featured,
+        is_daily_special: item.is_daily_special
     };
-    selectedFile.value = null; // Hiện tại chưa hỗ trợ sửa ảnh, nên reset file
+    selectedFile.value = null;
     showModal.value = true;
 };
 
-// Đóng Modal
 const closeModal = () => {
     showModal.value = false;
 };
 
-// Submit Form (Xử lý chung cho cả Thêm và Sửa)
 const submitForm = async () => {
     isSaving.value = true;
     try {
         if (isEditMode.value) {
-            // ---> LOGIC CHỈNH SỬA (Gửi JSON)
             const response = await api.put(`/admin/menu-items/${formData.value.id}`, formData.value);
             if (response.data.success) {
                 closeModal();
@@ -284,11 +340,14 @@ const submitForm = async () => {
                 triggerToast('Cập nhật thông tin thành công!', 'success');
             }
         } else {
-            // ---> LOGIC THÊM MỚI (Gửi FormData để kèm ảnh)
             const dataToSubmit = new FormData();
             dataToSubmit.append('name', formData.value.name);
             dataToSubmit.append('price', formData.value.price);
             dataToSubmit.append('category_id', formData.value.category_id);
+
+            // ---> THÊM MỚI: Gửi kèm 2 nhãn khi tạo mới
+            dataToSubmit.append('is_featured', formData.value.is_featured ? 1 : 0);
+            dataToSubmit.append('is_daily_special', formData.value.is_daily_special ? 1 : 0);
 
             if (formData.value.description) {
                 dataToSubmit.append('description', formData.value.description);
@@ -302,7 +361,7 @@ const submitForm = async () => {
                     'Content-Type': 'multipart/form-data'
                 }
             });
-            
+
             if (response.data.success) {
                 closeModal();
                 fetchMenuItems();
@@ -311,16 +370,10 @@ const submitForm = async () => {
         }
     } catch (error) {
         console.error('Lỗi lưu dữ liệu:', error);
-
         let errorMessage = 'Không thể lưu thông tin!';
 
-        // NẾU LÀ LỖI 422 TỪ LARAVEL
         if (error.response?.status === 422) {
             const validationErrors = error.response.data.errors;
-            console.log('Chi tiết lỗi Validation từ Laravel:', validationErrors);
-
-            // Lấy dòng thông báo lỗi đầu tiên để hiện lên Toast
-            // Ví dụ: "Trường giá tiền bắt buộc phải là số", "File ảnh quá lớn"...
             const firstErrorKey = Object.keys(validationErrors)[0];
             errorMessage = validationErrors[firstErrorKey][0];
         } else {
@@ -345,10 +398,6 @@ const getStatusClass = (status) => {
     if (status === 2) return 'border-warning text-warning';
     return 'border-danger text-danger';
 };
-
-onMounted(() => {
-    fetchMenuItems();
-});
 </script>
 
 <style scoped>

@@ -1,101 +1,201 @@
 <template>
-    <div class="dashboard-container">
-        <h2 class="page-title mb-4">Tổng quan hệ thống</h2>
+    <div class="dashboard-wrap">
 
-        <div v-if="isLoading" class="text-center py-5">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Đang tải...</span>
+        <!-- Page Header -->
+        <div class="page-header">
+            <div>
+                <h2 class="page-title">Tổng quan hệ thống</h2>
+                <p class="page-sub">Cập nhật lúc {{ lastUpdated }}</p>
             </div>
-            <p class="mt-2 text-muted">Đang tổng hợp dữ liệu...</p>
+            <div class="header-date">
+                <i class="bi bi-calendar3"></i>
+                <span>{{ currentMonth }}</span>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div v-if="isLoading" class="loading-state">
+            <div class="loading-spinner"></div>
+            <p>Đang tổng hợp dữ liệu...</p>
         </div>
 
         <div v-else>
-            <div class="row g-4 mb-4">
-                <div class="col-12 col-sm-6 col-lg-3">
-                    <div class="stat-card revenue">
-                        <div class="stat-icon">
-                            <i class="bi bi-currency-dollar"></i>
+            <!-- Stat Cards -->
+            <div class="stat-grid">
+                <!-- Doanh thu -->
+                <div class="stat-card">
+                    <div class="stat-accent" style="background:#3b8dd4"></div>
+                    <div class="stat-header">
+                        <div class="stat-icon-wrap" style="background:#e6f1fb">
+                            <i class="bi bi-currency-dollar" style="color:#3b8dd4"></i>
                         </div>
-                        <div class="stat-details">
-                            <p class="stat-label">Tổng doanh thu (Đã thu)</p>
-                            <h3 class="stat-value">{{ formatCurrency(stats.revenue) }}</h3>
-                        </div>
+                        <span class="stat-delta stat-delta--up">
+                            <i class="bi bi-arrow-up"></i> Đã thu
+                        </span>
                     </div>
+                    <p class="stat-label">Doanh thu</p>
+                    <h3 class="stat-value">{{ formatCurrencyShort(stats.revenue) }}</h3>
+                    <p class="stat-detail">{{ formatCurrency(stats.revenue) }}</p>
                 </div>
 
-                <div class="col-12 col-sm-6 col-lg-3">
-                    <div class="stat-card orders">
-                        <div class="stat-icon">
-                            <i class="bi bi-receipt"></i>
+                <!-- Đơn hàng -->
+                <div class="stat-card">
+                    <div class="stat-accent" style="background:#4caf6e"></div>
+                    <div class="stat-header">
+                        <div class="stat-icon-wrap" style="background:#e8f5ee">
+                            <i class="bi bi-receipt" style="color:#4caf6e"></i>
                         </div>
-                        <div class="stat-details">
-                            <p class="stat-label">Tổng đơn hàng</p>
-                            <h3 class="stat-value">{{ stats.orders }}</h3>
-                        </div>
+                        <span class="stat-delta stat-delta--neutral">Tất cả</span>
                     </div>
+                    <p class="stat-label">Tổng đơn hàng</p>
+                    <h3 class="stat-value">{{ stats.orders }}</h3>
+                    <p class="stat-detail">Đơn trong hệ thống</p>
                 </div>
 
-                <div class="col-12 col-sm-6 col-lg-3">
-                    <div class="stat-card users">
-                        <div class="stat-icon">
-                            <i class="bi bi-people"></i>
+                <!-- Khách hàng mới -->
+                <div class="stat-card">
+                    <div class="stat-accent" style="background:#7c6ee0"></div>
+                    <div class="stat-header">
+                        <div class="stat-icon-wrap" style="background:#eeecfc">
+                            <i class="bi bi-people" style="color:#7c6ee0"></i>
                         </div>
-                        <div class="stat-details">
-                            <p class="stat-label">Khách hàng mới (Tháng này)</p>
-                            <h3 class="stat-value">{{ stats.newUsers }}</h3>
-                        </div>
+                        <span class="stat-delta stat-delta--neutral">Tháng này</span>
                     </div>
+                    <p class="stat-label">Khách hàng mới</p>
+                    <h3 class="stat-value">{{ stats.newUsers }}</h3>
+                    <p class="stat-detail">Tài khoản đăng ký</p>
                 </div>
 
-                <div class="col-12 col-sm-6 col-lg-3">
-                    <router-link to="/admin/reservations" class="text-decoration-none">
-                        <div class="stat-card reservations clickable-card">
-                            <div class="stat-icon">
-                                <i class="bi bi-calendar-check"></i>
-                            </div>
-                            <div class="stat-details">
-                                <p class="stat-label">Yêu cầu đặt bàn mới</p>
-                                <h3 class="stat-value text-dark">{{ stats.pendingReservations }}</h3>
-                            </div>
+                <!-- Đặt bàn -->
+                <router-link to="/admin/reservations" class="stat-card stat-card--link">
+                    <div class="stat-accent" style="background:#e8892a"></div>
+                    <div class="stat-header">
+                        <div class="stat-icon-wrap" style="background:#fff3e0">
+                            <i class="bi bi-calendar-check" style="color:#e8892a"></i>
                         </div>
-                    </router-link>
-                </div>
+                        <span v-if="stats.pendingReservations > 0" class="stat-delta stat-delta--warn">
+                            Cần xử lý
+                        </span>
+                        <span v-else class="stat-delta stat-delta--neutral">Trống</span>
+                    </div>
+                    <p class="stat-label">Yêu cầu đặt bàn</p>
+                    <h3 class="stat-value">{{ stats.pendingReservations }}</h3>
+                    <p class="stat-detail">Đang chờ xác nhận →</p>
+                </router-link>
             </div>
 
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0 fw-bold">Đơn hàng gần đây</h5>
-                    <router-link to="/admin/orders" class="btn btn-sm btn-outline-primary">Xem tất cả</router-link>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
-                            <thead class="table-light">
+            <!-- Bottom Grid: Table + Sidebar -->
+            <div class="content-grid">
+                <!-- Recent Orders Table -->
+                <div class="data-card">
+                    <div class="data-card-header">
+                        <h5 class="data-card-title">
+                            <i class="bi bi-clock-history me-2" style="color:#3b8dd4;font-size:14px"></i>
+                            Đơn hàng gần đây
+                        </h5>
+                        <router-link to="/admin/orders" class="view-all-btn">
+                            Xem tất cả <i class="bi bi-arrow-right"></i>
+                        </router-link>
+                    </div>
+
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead>
                                 <tr>
-                                    <th>Mã ĐH</th>
-                                    <th>Khách hàng</th>
-                                    <th>Ngày đặt</th>
-                                    <th>Tổng tiền</th>
-                                    <th>Trạng thái</th>
+                                    <th>MÃ ĐH</th>
+                                    <th>KHÁCH HÀNG</th>
+                                    <th>NGÀY ĐẶT</th>
+                                    <th>TỔNG TIỀN</th>
+                                    <th>TRẠNG THÁI</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr v-if="recentOrders.length === 0">
-                                    <td colspan="5" class="text-center py-4">Chưa có đơn hàng nào.</td>
+                                    <td colspan="5" class="empty-row">
+                                        <i class="bi bi-inbox" style="font-size:20px;color:#ccc"></i>
+                                        <span>Chưa có đơn hàng nào.</span>
+                                    </td>
                                 </tr>
-                                <tr v-else v-for="order in recentOrders" :key="order.id">
-                                    <td><span class="fw-bold text-secondary">#{{ order.id }}</span></td>
-                                    <td>{{ order.customer_name }}</td>
-                                    <td>{{ formatDate(order.created_at) }}</td>
-                                    <td class="fw-bold text-danger">{{ formatCurrency(order.total_price) }}</td>
+                                <tr v-else v-for="order in recentOrders" :key="order.id" class="table-row">
+                                    <td><span class="order-id">#{{ order.id }}</span></td>
                                     <td>
-                                        <span class="badge" :class="getStatusClass(order.status)">
+                                        <div class="customer-cell">
+                                            <div class="customer-avatar">{{ getCustomerInitial(order.customer_name) }}
+                                            </div>
+                                            <span>{{ order.customer_name || '—' }}</span>
+                                        </div>
+                                    </td>
+                                    <td class="date-cell">{{ formatDate(order.created_at) }}</td>
+                                    <td><span class="amount">{{ formatCurrency(order.total_price) }}</span></td>
+                                    <td>
+                                        <span class="status-badge" :class="getStatusClass(order.status)">
                                             {{ getStatusText(order.status) }}
                                         </span>
                                     </td>
                                 </tr>
                             </tbody>
                         </table>
+                    </div>
+                </div>
+
+                <!-- Right Panel -->
+                <div class="side-panel">
+                    <!-- Reservations widget -->
+                    <div class="widget-card">
+                        <div class="widget-header">
+                            <span class="widget-title">
+                                <i class="bi bi-calendar-event" style="color:#e8892a"></i>
+                                Đặt bàn chờ xử lý
+                            </span>
+                            <span class="widget-count" :class="{ 'has-items': stats.pendingReservations > 0 }">
+                                {{ stats.pendingReservations }}
+                            </span>
+                        </div>
+                        <div class="widget-body">
+                            <p v-if="stats.pendingReservations === 0" class="widget-empty">
+                                Không có yêu cầu nào đang chờ.
+                            </p>
+                            <router-link v-else to="/admin/reservations" class="widget-action-btn">
+                                <i class="bi bi-arrow-right-circle"></i>
+                                Xem {{ stats.pendingReservations }} yêu cầu đặt bàn
+                            </router-link>
+                        </div>
+                    </div>
+
+                    <!-- Quick stats -->
+                    <div class="widget-card">
+                        <div class="widget-header">
+                            <span class="widget-title">
+                                <i class="bi bi-activity" style="color:#7c6ee0"></i>
+                                Tóm tắt nhanh
+                            </span>
+                        </div>
+                        <div class="quick-grid">
+                            <div class="quick-item">
+                                <span class="quick-label">Hoàn thành</span>
+                                <span class="quick-value quick-value--green">
+                                    {{ ordersByStatus('completed') }}
+                                </span>
+                            </div>
+                            <div class="quick-item">
+                                <span class="quick-label">Đang giao</span>
+                                <span class="quick-value quick-value--blue">
+                                    {{ ordersByStatus('delivering') }}
+                                </span>
+                            </div>
+                            <div class="quick-item">
+                                <span class="quick-label">Chuẩn bị</span>
+                                <span class="quick-value quick-value--amber">
+                                    {{ ordersByStatus('processing') }}
+                                </span>
+                            </div>
+                            <div class="quick-item">
+                                <span class="quick-label">Đã hủy</span>
+                                <span class="quick-value quick-value--red">
+                                    {{ ordersByStatus('cancelled') }}
+                                </span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -108,207 +208,583 @@ import { ref, onMounted } from 'vue';
 import api from '@/services/api';
 
 const isLoading = ref(true);
+const allOrders = ref([]);
 
-// State chứa dữ liệu thống kê thật
 const stats = ref({
     revenue: 0,
     orders: 0,
     newUsers: 0,
-    pendingReservations: 0
+    pendingReservations: 0,
 });
 
-// State chứa 5 đơn hàng mới nhất
 const recentOrders = ref([]);
 
-// Hàm lấy dữ liệu Dashboard
+// Ngày hiển thị
+const now = new Date();
+const lastUpdated = now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+const currentMonth = now.toLocaleDateString('vi-VN', { month: 'long', year: 'numeric' });
+
 const fetchDashboardData = async () => {
     isLoading.value = true;
     try {
-        // Dùng Promise.all để gọi 3 API cùng một lúc thay vì gọi tuần tự chờ nhau (Giúp load cực nhanh)
         const [ordersRes, usersRes, reservationsRes] = await Promise.all([
             api.get('/admin/orders'),
             api.get('/admin/users'),
-            api.get('/admin/reservations')
+            api.get('/admin/reservations'),
         ]);
 
         const ordersData = ordersRes.data.success ? ordersRes.data.data : [];
         const usersData = usersRes.data.success ? usersRes.data.data : [];
-        const reservationsData = reservationsRes.data.reservations ? reservationsRes.data.reservations : [];
+        const reservationsData = reservationsRes.data.reservations || [];
 
-        // 1. TÍNH DOANH THU (CHỈ LẤY CÁC ĐƠN ĐÃ THANH TOÁN: 'paid')
+        allOrders.value = ordersData;
+
         stats.value.revenue = ordersData
-            .filter(order => order.payment_status === 'paid')
-            .reduce((sum, order) => sum + Number(order.total_price), 0);
+            .filter(o => o.payment_status === 'paid')
+            .reduce((sum, o) => sum + Number(o.total_price), 0);
 
-        // 2. TỔNG SỐ ĐƠN HÀNG
         stats.value.orders = ordersData.length;
 
-        // 3. KHÁCH HÀNG MỚI (Lọc những khách tạo tài khoản trong tháng này)
-        const currentMonth = new Date().getMonth();
-        const currentYear = new Date().getFullYear();
-        stats.value.newUsers = usersData.filter(user => {
-            const userDate = new Date(user.created_at);
-            return userDate.getMonth() === currentMonth && userDate.getFullYear() === currentYear;
+        const cm = new Date().getMonth(), cy = new Date().getFullYear();
+        stats.value.newUsers = usersData.filter(u => {
+            const d = new Date(u.created_at);
+            return d.getMonth() === cm && d.getFullYear() === cy;
         }).length;
 
-        // 4. YÊU CẦU ĐẶT BÀN CHỜ XÁC NHẬN
-        stats.value.pendingReservations = reservationsData.filter(res => res.status === 'pending').length;
-
-        // 5. LẤY 5 ĐƠN HÀNG GẦN NHẤT ĐỂ HIỂN THỊ RA BẢNG (API đã sắp xếp latest() nên chỉ cần cắt 5 cái đầu)
+        stats.value.pendingReservations = reservationsData.filter(r => r.status === 'pending').length;
         recentOrders.value = ordersData.slice(0, 5);
 
-    } catch (error) {
-        console.error("Lỗi khi tải dữ liệu Dashboard:", error);
+    } catch (e) {
+        console.error('Lỗi khi tải Dashboard:', e);
     } finally {
         isLoading.value = false;
     }
 };
 
-// ==========================================
-// UTILITY FUNCTIONS
-// ==========================================
-const formatCurrency = (value) => {
-    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(value) || 0);
+// Thống kê đơn theo trạng thái (dùng cho quick stats)
+const ordersByStatus = (status) => allOrders.value.filter(o => o.status === status).length;
+
+// ---- Utilities ----
+const formatCurrency = (v) =>
+    new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(v) || 0);
+
+// Rút gọn số lớn: 6.251.200 → 6,25 tr
+const formatCurrencyShort = (v) => {
+    const n = Number(v) || 0;
+    if (n >= 1_000_000) return (n / 1_000_000).toFixed(2).replace('.', ',') + ' tr ₫';
+    if (n >= 1_000) return (n / 1_000).toFixed(0) + ' nghìn ₫';
+    return formatCurrency(n);
 };
 
-const formatDate = (dateString) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('vi-VN') + ' ' + date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+const formatDate = (d) => {
+    if (!d) return '';
+    const dt = new Date(d);
+    return dt.toLocaleDateString('vi-VN') + ' · ' +
+        dt.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
 };
 
-// Dịch trạng thái từ tiếng Anh sang tiếng Việt
-const getStatusText = (status) => {
-    switch (status) {
-        case 'completed': return 'Hoàn thành';
-        case 'pending': return 'Chờ xác nhận';
-        case 'processing': return 'Đang chuẩn bị';
-        case 'delivering': return 'Đang giao hàng';
-        case 'cancelled': return 'Đã hủy';
-        default: return 'Không rõ';
-    }
+const getCustomerInitial = (name) => {
+    if (!name) return '?';
+    return name.trim().split(' ').pop()[0]?.toUpperCase() || '?';
 };
 
-const getStatusClass = (status) => {
-    switch (status) {
-        case 'completed': return 'bg-success';
-        case 'pending': return 'bg-warning text-dark';
-        case 'processing': return 'bg-info text-dark';
-        case 'delivering': return 'bg-secondary text-white';
-        case 'cancelled': return 'bg-danger';
-        default: return 'bg-secondary';
-    }
-};
+const getStatusText = (s) => ({
+    completed: 'Hoàn thành',
+    pending: 'Chờ xác nhận',
+    processing: 'Đang chuẩn bị',
+    delivering: 'Đang giao hàng',
+    cancelled: 'Đã hủy',
+}[s] || 'Không rõ');
 
-onMounted(() => {
-    fetchDashboardData();
-});
+const getStatusClass = (s) => ({
+    completed: 'badge--success',
+    pending: 'badge--warning',
+    processing: 'badge--info',
+    delivering: 'badge--secondary',
+    cancelled: 'badge--danger',
+}[s] || 'badge--secondary');
+
+onMounted(fetchDashboardData);
 </script>
 
 <style scoped>
-/* GIỮ NGUYÊN TOÀN BỘ CSS CỦA BẠN TRƯỚC ĐÓ Ở ĐÂY */
+/* ===== LAYOUT ===== */
+.dashboard-wrap {
+    max-width: 1200px;
+}
+
+/* ===== PAGE HEADER ===== */
+.page-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
 .page-title {
-    color: #333;
-    font-weight: 700;
-    font-size: 1.5rem;
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #1a1a2e;
+    margin: 0;
+}
+
+.page-sub {
+    font-size: 12px;
+    color: #999;
+    margin: 3px 0 0;
+}
+
+.header-date {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: #fff;
+    border: 0.5px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 12px;
+    color: #666;
+}
+
+/* ===== LOADING ===== */
+.loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 60px 0;
+    gap: 12px;
+    color: #aaa;
+    font-size: 13px;
+}
+
+.loading-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid #e5e7eb;
+    border-top-color: #3b8dd4;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ===== STAT CARDS ===== */
+.stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+    margin-bottom: 18px;
 }
 
 .stat-card {
     background: #fff;
-    border-radius: 10px;
-    padding: 20px;
-    display: flex;
-    align-items: center;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border-radius: 12px;
+    border: 0.5px solid #e5e7eb;
+    padding: 16px;
+    position: relative;
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .stat-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    border-color: #d0d5dd;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
 }
 
-.stat-icon {
-    width: 60px;
-    height: 60px;
-    border-radius: 12px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 1.8rem;
-    margin-right: 15px;
-}
-
-.stat-details {
-    flex: 1;
-}
-
-.stat-label {
-    margin: 0;
-    color: #888;
-    font-size: 0.9rem;
-    font-weight: 500;
-}
-
-.stat-value {
-    margin: 0;
-    color: #333;
-    font-size: 1.4rem;
-    font-weight: 700;
-}
-
-.revenue .stat-icon {
-    background-color: #e3f2fd;
-    color: #1976d2;
-}
-
-.orders .stat-icon {
-    background-color: #e8f5e9;
-    color: #388e3c;
-}
-
-.users .stat-icon {
-    background-color: #f3e5f5;
-    color: #7b1fa2;
-}
-
-.reservations .stat-icon {
-    background-color: #fff3e0;
-    color: #e67e22;
-}
-
-.table th {
-    font-weight: 600;
-    color: #555;
-    text-transform: uppercase;
-    font-size: 0.85rem;
-    letter-spacing: 0.5px;
-}
-
-.table td {
-    vertical-align: middle;
-    padding: 12px 15px;
-}
-
-.badge {
-    padding: 6px 10px;
-    font-weight: 500;
-    border-radius: 6px;
-}
-
-/* Thêm class để báo hiệu card có thể click */
-.clickable-card {
+.stat-card--link {
     cursor: pointer;
 }
 
-/* Đảm bảo màu chữ bên trong router-link không bị biến thành màu xanh của link */
-.clickable-card .stat-label {
-    color: #888;
-    transition: color 0.3s ease;
+.stat-accent {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    border-radius: 12px 12px 0 0;
 }
 
-.clickable-card:hover .stat-label {
-    color: #e67e22;
-    /* Đổi màu chữ label khi hover cho đồng bộ với icon */
+.stat-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.stat-icon-wrap {
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+}
+
+.stat-delta {
+    font-size: 10.5px;
+    font-weight: 500;
+    padding: 3px 8px;
+    border-radius: 5px;
+}
+
+.stat-delta--up {
+    background: #eaf3de;
+    color: #3b6d11;
+}
+
+.stat-delta--neutral {
+    background: #f1f1f1;
+    color: #777;
+}
+
+.stat-delta--warn {
+    background: #fff3e0;
+    color: #854f0b;
+}
+
+.stat-label {
+    font-size: 11.5px;
+    color: #999;
+    margin: 0 0 4px;
+    font-weight: 400;
+}
+
+.stat-value {
+    font-size: 1.6rem;
+    font-weight: 600;
+    color: #1a1a2e;
+    margin: 0 0 4px;
+    line-height: 1.1;
+}
+
+.stat-detail {
+    font-size: 11px;
+    color: #bbb;
+    margin: 0;
+}
+
+/* ===== CONTENT GRID ===== */
+.content-grid {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: 14px;
+    align-items: start;
+}
+
+/* ===== DATA CARD (TABLE) ===== */
+.data-card {
+    background: #fff;
+    border: 0.5px solid #e5e7eb;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.data-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 0.5px solid #f0f0f0;
+}
+
+.data-card-title {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #1a1a2e;
+    margin: 0;
+    display: flex;
+    align-items: center;
+}
+
+.view-all-btn {
+    font-size: 12px;
+    color: #3b8dd4;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 5px 10px;
+    border: 0.5px solid #d0e4f4;
+    border-radius: 6px;
+    transition: background 0.15s;
+}
+
+.view-all-btn:hover {
+    background: #f0f7ff;
+}
+
+.table-wrap {
+    overflow-x: auto;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table thead th {
+    padding: 9px 16px;
+    font-size: 10.5px;
+    font-weight: 600;
+    color: #aaa;
+    text-align: left;
+    letter-spacing: 0.5px;
+    background: #fafafa;
+    border-bottom: 0.5px solid #f0f0f0;
+}
+
+.data-table tbody td {
+    padding: 11px 16px;
+    font-size: 13px;
+    color: #333;
+    border-bottom: 0.5px solid #f5f5f5;
+    vertical-align: middle;
+}
+
+.data-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.table-row:hover td {
+    background: #fafcff;
+}
+
+.order-id {
+    font-weight: 600;
+    color: #888;
+    font-size: 12px;
+}
+
+.customer-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.customer-avatar {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #e6f1fb;
+    color: #3b8dd4;
+    font-size: 11px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.date-cell {
+    font-size: 11.5px !important;
+    color: #aaa !important;
+}
+
+.amount {
+    font-weight: 600;
+    color: #c04828;
+    font-size: 12.5px;
+}
+
+.empty-row {
+    text-align: center;
+    padding: 40px !important;
+    color: #bbb;
+    font-size: 13px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Status badges */
+.status-badge {
+    font-size: 11px;
+    padding: 4px 9px;
+    border-radius: 5px;
+    font-weight: 500;
+    display: inline-block;
+}
+
+.badge--success {
+    background: #eaf3de;
+    color: #3b6d11;
+}
+
+.badge--warning {
+    background: #faeeda;
+    color: #854f0b;
+}
+
+.badge--info {
+    background: #e6f1fb;
+    color: #185fa5;
+}
+
+.badge--secondary {
+    background: #f1f1f1;
+    color: #666;
+}
+
+.badge--danger {
+    background: #fcebeb;
+    color: #a32d2d;
+}
+
+/* ===== SIDE PANEL ===== */
+.side-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.widget-card {
+    background: #fff;
+    border: 0.5px solid #e5e7eb;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.widget-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 13px 16px;
+    border-bottom: 0.5px solid #f0f0f0;
+}
+
+.widget-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1a1a2e;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.widget-count {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: #f1f1f1;
+    color: #999;
+}
+
+.widget-count.has-items {
+    background: #fff3e0;
+    color: #854f0b;
+}
+
+.widget-body {
+    padding: 14px 16px;
+}
+
+.widget-empty {
+    font-size: 12.5px;
+    color: #bbb;
+    text-align: center;
+    margin: 0;
+}
+
+.widget-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 12px;
+    background: #fff8f3;
+    border: 0.5px solid #fcd9bf;
+    border-radius: 8px;
+    color: #c45320;
+    font-size: 12.5px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: background 0.15s;
+}
+
+.widget-action-btn:hover {
+    background: #fff0e6;
+}
+
+/* Quick stats grid */
+.quick-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: #f0f0f0;
+}
+
+.quick-item {
+    background: #fff;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.quick-label {
+    font-size: 11px;
+    color: #aaa;
+}
+
+.quick-value {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.quick-value--green {
+    color: #3b6d11;
+}
+
+.quick-value--blue {
+    color: #185fa5;
+}
+
+.quick-value--amber {
+    color: #854f0b;
+}
+
+.quick-value--red {
+    color: #a32d2d;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1024px) {
+    .stat-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .content-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .side-panel {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 600px) {
+    .stat-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .side-panel {
+        grid-template-columns: 1fr;
+    }
+
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
 }
 </style>

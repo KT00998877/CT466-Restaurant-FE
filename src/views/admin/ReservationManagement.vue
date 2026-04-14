@@ -74,7 +74,8 @@
                                         :disabled="res.isUpdating">
                                         <option value="pending">Chờ xác nhận</option>
                                         <option value="confirmed">Đã xác nhận</option>
-                                        <option value="completed">Đã dùng bữa</option>
+                                        <option value="seated">Đang dùng bữa</option>
+                                        <option value="completed">Đã rời đi/Hoàn thành</option>
                                         <option value="cancelled">Đã hủy</option>
                                     </select>
                                 </td>
@@ -188,10 +189,12 @@ const isSoon = (dateString, status) => {
 };
 
 // Màu sắc cho thẻ Select
+// Thêm màu sắc cho trạng thái mới
 const getStatusClass = (status) => {
     switch (status) {
         case 'pending': return 'text-warning border-warning bg-warning bg-opacity-10';
         case 'confirmed': return 'text-primary border-primary bg-primary bg-opacity-10';
+        case 'seated': return 'text-info border-info bg-info bg-opacity-10'; 
         case 'completed': return 'text-success border-success bg-success bg-opacity-10';
         case 'cancelled': return 'text-danger border-danger bg-danger bg-opacity-10';
         default: return '';

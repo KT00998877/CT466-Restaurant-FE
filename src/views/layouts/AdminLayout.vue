@@ -1,330 +1,218 @@
 <template>
-    <div class="admin-layout">
-        <aside class="sidebar" :class="{ 'sidebar-closed': !isSidebarOpen }">
-            <div class="sidebar-header">
-                <span v-if="isSidebarOpen" class="logo-text">ADMIN PANEL</span>
-                <span v-else class="logo-icon">AP</span>
+    <div class="panel-layout admin-theme">
+        <!-- Sidebar -->
+        <aside class="panel-sidebar" :class="{ collapsed: !isSidebarOpen }">
+            <!-- Logo -->
+            <div class="panel-logo">
+                <div class="panel-logo__mark">
+                    <div class="panel-logo__icon">
+                        <i class="bi bi-grid-fill"></i>
+                    </div>
+                    <div class="panel-logo__texts">
+                        <span class="panel-logo__title">Admin Panel</span>
+                        <span class="panel-logo__sub">Nhà hàng XYZ</span>
+                    </div>
+                </div>
             </div>
 
-            <ul class="sidebar-menu">
-                <li>
-                    <router-link to="/admin/dashboard" title="Dashboard">
-                        <i class="bi bi-speedometer2"></i>
-                        <span v-if="isSidebarOpen">Tổng quan</span>
+            <!-- Navigation -->
+            <nav class="panel-nav">
+                <div class="panel-nav__section">
+                    <span v-if="isSidebarOpen" class="panel-nav__label">Tổng quan</span>
+                    <router-link to="/admin/dashboard" class="panel-nav__item" title="Tổng quan">
+                        <i class="bi bi-speedometer2 panel-nav__icon"></i>
+                        <span class="panel-nav__text">Tổng quan</span>
                     </router-link>
-                </li>
-                <li>
-                    <router-link to="/admin/menu" title="Quản lý Thực đơn">
-                        <i class="bi bi-card-list"></i>
-                        <span v-if="isSidebarOpen">Quản lý Thực đơn</span>
-                    </router-link>
-                </li>
-                <li>
-                    <router-link to="/admin/orders" title="Quản lý Hoá đơn">
-                        <i class="bi bi-receipt"></i>
-                        <span v-if="isSidebarOpen">Quản lý Hoá đơn</span>
-                    </router-link>
-                </li>
-                <li>
-                    <router-link to="/admin/reservations" title="Quản lý Đặt bàn">
-                        <i class="bi bi-calendar-check"></i>
-                        <span v-if="isSidebarOpen">Quản lý Đặt bàn</span>
-                    </router-link>
-                </li>
-                <li>
-                    <router-link to="/admin/users" title="Quản lý Khách hàng">
-                        <i class="bi bi-people"></i>
-                        <span v-if="isSidebarOpen">Quản lý Khách hàng</span>
-                    </router-link>
-                </li>
-                <li>
-                    <router-link to="/admin/ingredients" title="Quản lý Nguyên liệu">
-                        <i class="bi bi-box-seam"></i>
-                        <span v-if="isSidebarOpen">Quản lý Nguyên liệu</span>
-                    </router-link>
-                </li>
-
-                <li>
-                    <router-link to="/admin/inventory" title="Quản lí kho">
-                        <i class="bi bi-bar-chart"></i>
-                        <span v-if="isSidebarOpen">Quản lí kho</span>
-                    </router-link>
-                </li>
-
-                <li>
-                    <router-link to="/admin/reports" title="Báo cáo Doanh thu">
-                        <i class="bi bi-graph-up"></i>
-                        <span v-if="isSidebarOpen">Báo cáo Doanh thu</span>
-                    </router-link>
-                </li>
-            </ul>
-        </aside>
-
-        <div class="main-wrapper">
-
-            <header class="admin-header">
-                <div class="hamburger" @click="toggleSidebar">
-                    <i class="bi bi-list fs-3"></i>
                 </div>
 
-                <div class="nav-actions d-flex align-items-center gap-3">
-                    <router-link to="/" class="btn btn-outline-secondary btn-sm me-2">
-                        <i class="bi bi-shop me-1"></i> Xem trang web
+                <div class="panel-nav__section">
+                    <span v-if="isSidebarOpen" class="panel-nav__label">Quản lý</span>
+                    <router-link to="/admin/menu" class="panel-nav__item" title="Thực đơn">
+                        <i class="bi bi-card-list panel-nav__icon"></i>
+                        <span class="panel-nav__text">Thực đơn</span>
                     </router-link>
+                    <router-link to="/admin/dishes" class="panel-nav__item" title="Tiến độ Món ăn">
+                        <i class="bi bi-egg panel-nav__icon"></i>
+                        <span class="panel-nav__text">Tiến độ Món ăn</span>
+                    </router-link>
+                    <router-link to="/admin/orders" class="panel-nav__item" title="Hoá đơn">
+                        <i class="bi bi-receipt panel-nav__icon"></i>
+                        <span class="panel-nav__text">Hoá đơn</span>
+                    </router-link>
+                    <router-link to="/admin/reservations" class="panel-nav__item" title="Đặt bàn">
+                        <i class="bi bi-calendar-check panel-nav__icon"></i>
+                        <span class="panel-nav__text">Đặt bàn</span>
+                        <span v-if="pendingReservations > 0" class="panel-nav__badge">
+                            {{ pendingReservations }}
+                        </span>
+                    </router-link>
+                    <router-link to="/admin/users" class="panel-nav__item" title="Tài khoản">
+                        <i class="bi bi-people panel-nav__icon"></i>
+                        <span class="panel-nav__text">Tài khoản</span>
+                    </router-link>
+                </div>
 
-                    <div class="user-dropdown position-relative">
-                        <div class="user-info" @click="toggleUserDropdown">
-                            <span class="fw-bold me-2 d-none d-md-inline">{{ user?.name || 'Admin' }}</span>
-                            <i class="bi bi-person-circle fs-3 text-secondary"></i>
-                        </div>
+                <div class="panel-nav__section">
+                    <span v-if="isSidebarOpen" class="panel-nav__label">Kho & Báo cáo</span>
+                    <router-link to="/admin/ingredients" class="panel-nav__item" title="Nguyên liệu">
+                        <i class="bi bi-box-seam panel-nav__icon"></i>
+                        <span class="panel-nav__text">Nguyên liệu</span>
+                    </router-link>
+                    <router-link to="/admin/inventory" class="panel-nav__item" title="Kho hàng">
+                        <i class="bi bi-bar-chart panel-nav__icon"></i>
+                        <span class="panel-nav__text">Kho hàng</span>
+                    </router-link>
+                    <router-link to="/admin/contacts" class="panel-nav__item" title="Liên hệ">
+                        <i class="bi bi-envelope panel-nav__icon"></i>
+                        <span class="panel-nav__text">Liên hệ</span>
+                    </router-link>
+                    <router-link to="/admin/reports" class="panel-nav__item" title="Báo cáo Doanh thu">
+                        <i class="bi bi-graph-up panel-nav__icon"></i>
+                        <span class="panel-nav__text">Báo cáo Doanh thu</span>
+                    </router-link>
+                </div>
+            </nav>
 
-                        <ul class="user-dropdown-content" :class="{ show: isUserDropdownOpen }">
-                            <li class="user-name d-md-none">Xin chào, {{ user?.name }}</li>
-                            <li>
-                                <a href="#" @click.prevent="handleLogout">
-                                    <i class="bi bi-box-arrow-right me-2"></i>Đăng xuất
-                                </a>
-                            </li>
-                        </ul>
+            <!-- User Footer -->
+            <div class="panel-footer">
+                <div class="panel-user" @click="toggleUserDropdown" ref="userRef">
+                    <div class="panel-user__avatar">{{ userInitials }}</div>
+                    <div class="panel-user__info">
+                        <span class="panel-user__name">{{ user?.name || 'Admin' }}</span>
+                        <span class="panel-user__role">Administrator</span>
                     </div>
+                    <i class="bi bi-three-dots-vertical panel-user__dots"></i>
+
+                    <div class="panel-user__dropdown" :class="{ show: isUserDropdownOpen }">
+                        <router-link to="/" class="panel-dropdown__item">
+                            <i class="bi bi-shop"></i> Xem trang web
+                        </router-link>
+                        <div class="panel-dropdown__divider"></div>
+                        <a href="#" class="panel-dropdown__item panel-dropdown__item--danger"
+                            @click.prevent="handleLogout">
+                            <i class="bi bi-box-arrow-right"></i> Đăng xuất
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main -->
+        <div class="panel-main">
+            <!-- Topbar -->
+            <header class="panel-header">
+                <button class="panel-header__toggle" @click="toggleSidebar" title="Toggle sidebar">
+                    <i class="bi bi-list"></i>
+                </button>
+
+                <div class="panel-header__breadcrumb">
+                    <span class="panel-header__breadcrumb-parent">Trang chủ</span>
+                    <i class="bi bi-chevron-right panel-header__breadcrumb-sep"></i>
+                    <span class="panel-header__breadcrumb-current">{{ currentPageTitle }}</span>
+                </div>
+
+                <div class="panel-header__actions">
+                    <router-link to="/" class="panel-header__btn">
+                        <i class="bi bi-shop"></i>
+                        <span>Xem trang web</span>
+                    </router-link>
+                    <!-- <div class="panel-header__icon-btn" :class="{ 'has-notif': pendingReservations > 0 }">
+                        <i class="bi bi-bell"></i>
+                    </div> -->
                 </div>
             </header>
 
-            <main class="admin-content">
-               <router-view></router-view>
+            <!-- Content -->
+            <main class="panel-content">
+                <router-view></router-view>
             </main>
         </div>
+
+        <!-- Mobile overlay -->
+        <div v-if="isSidebarOpen && isMobile" class="panel-overlay" @click="toggleSidebar"></div>
     </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import { useAuth } from '@/composables/useAuth';
+import api from '@/services/api';
+import '@/assets/panel-layout.css';
 
 const router = useRouter();
+const route = useRoute();
 const { user, logout } = useAuth();
 
-// Mặc định mở Sidebar trên Desktop, đóng trên Mobile
+const isMobile = ref(window.innerWidth <= 768);
 const isSidebarOpen = ref(window.innerWidth > 768);
 const isUserDropdownOpen = ref(false);
+const pendingReservations = ref(0);
+const userRef = ref(null);
 
-const toggleSidebar = () => {
-    isSidebarOpen.value = !isSidebarOpen.value;
+const pageMap = {
+    '/admin/dashboard': 'Tổng quan',
+    '/admin/menu': 'Thực đơn',
+    '/admin/dishes': 'Tiến độ Món ăn',
+    '/admin/orders': 'Hoá đơn',
+    '/admin/reservations': 'Đặt bàn',
+    '/admin/users': 'Tài khoản',
+    '/admin/ingredients': 'Nguyên liệu',
+    '/admin/inventory': 'Kho hàng',
+    '/admin/contacts': 'Liên hệ',
+    '/admin/reports': 'Báo cáo',
 };
+const currentPageTitle = computed(() => pageMap[route.path] || 'Admin');
 
-const toggleUserDropdown = (event) => {
-    event.preventDefault();
+const userInitials = computed(() => {
+    const name = user?.value?.name || 'Admin';
+    return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+});
+
+const toggleSidebar = () => { isSidebarOpen.value = !isSidebarOpen.value; };
+const toggleUserDropdown = (e) => {
+    e.stopPropagation();
     isUserDropdownOpen.value = !isUserDropdownOpen.value;
 };
-
 const handleLogout = async () => {
     isUserDropdownOpen.value = false;
-    try {
-        await logout();
-    } finally {
-        router.push('/login');
-    }
+    try { await logout(); } finally { router.push('/login'); }
 };
 
-// Đóng dropdown khi click ra ngoài
-const closeClickOutside = (e) => {
-    if (!e.target.closest('.user-dropdown')) {
+const fetchPendingReservations = async () => {
+    try {
+        const res = await api.get('/admin/reservations');
+        const data = res.data.reservations || [];
+        pendingReservations.value = data.filter(r => r.status === 'pending').length;
+    } catch (e) { /* silent */ }
+};
+
+const onResize = () => {
+    isMobile.value = window.innerWidth <= 768;
+    isSidebarOpen.value = window.innerWidth > 768;
+};
+const onClickOutside = (e) => {
+    if (userRef.value && !userRef.value.contains(e.target)) {
         isUserDropdownOpen.value = false;
     }
 };
 
 onMounted(() => {
-    window.addEventListener('click', closeClickOutside);
-    // Tự động điều chỉnh sidebar khi resize màn hình
-    window.addEventListener('resize', () => {
-        if (window.innerWidth <= 768) isSidebarOpen.value = false;
-        else isSidebarOpen.value = true;
-    });
+    window.addEventListener('resize', onResize);
+    window.addEventListener('click', onClickOutside);
+    fetchPendingReservations();
 });
-
 onUnmounted(() => {
-    window.removeEventListener('click', closeClickOutside);
+    window.removeEventListener('resize', onResize);
+    window.removeEventListener('click', onClickOutside);
 });
 </script>
 
 <style scoped>
-.admin-layout {
-    display: flex;
-    min-height: 100vh;
-    background-color: #f4f6f9;
-    /* Màu nền xám nhẹ chuẩn Admin */
-}
-
-/* ================= SIDEBAR ================= */
-.sidebar {
-    width: 260px;
-    background-color: #343a40;
-    /* Nền tối */
-    color: #c2c7d0;
-    transition: width 0.3s ease;
-    display: flex;
-    flex-direction: column;
-    flex-shrink: 0;
-    z-index: 1000;
-}
-
-.sidebar-closed {
-    width: 70px;
-}
-
-.sidebar-header {
-    height: 60px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: #212529;
-    color: white;
-    border-bottom: 1px solid #4b545c;
-}
-
-.logo-text {
-    font-size: 1.2rem;
-    font-weight: bold;
-    letter-spacing: 1px;
-}
-
-.logo-icon {
-    font-size: 1.5rem;
-    font-weight: bold;
-}
-
-.sidebar-menu {
-    list-style: none;
-    padding: 10px 0;
-    margin: 0;
-}
-
-.sidebar-menu li a {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    padding: 15px 20px;
-    color: #c2c7d0;
-    text-decoration: none;
-    font-size: 1rem;
-    transition: all 0.3s;
-    white-space: nowrap;
-    overflow: hidden;
-}
-
-.sidebar-closed .sidebar-menu li a {
-    justify-content: center;
-    padding: 15px 0;
-}
-
-.sidebar-menu li a i {
-    font-size: 1.3rem;
-}
-
-.sidebar-menu li a:hover,
-.sidebar-menu li a.router-link-exact-active {
-    background-color: #e67e22;
-    /* Màu chủ đạo của bạn */
-    color: white;
-}
-
-/* ================= MAIN WRAPPER ================= */
-.main-wrapper {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-}
-
-/* ================= HEADER ================= */
-.admin-header {
-    height: 60px;
-    background-color: white;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 20px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-    z-index: 999;
-}
-
-.hamburger {
-    cursor: pointer;
-    color: #333;
-}
-
-.user-info {
-    display: flex;
-    align-items: center;
-    cursor: pointer;
-}
-
-/* ================= DROPDOWN ================= */
-.user-dropdown-content {
-    display: none;
-    position: absolute;
-    top: 100%;
-    right: 0;
-    background: white;
-    min-width: 200px;
-    border-radius: 8px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-    margin-top: 15px;
-    padding: 10px 0;
-    list-style: none;
-}
-
-.user-dropdown-content.show {
-    display: block;
-}
-
-.user-dropdown-content .user-name {
-    padding: 10px 20px;
-    font-weight: bold;
-    color: #e67e22;
-    border-bottom: 1px solid #eee;
-    margin-bottom: 5px;
-}
-
-.user-dropdown-content li a {
-    display: block;
-    padding: 12px 20px;
-    color: #444;
-    text-decoration: none;
-    transition: 0.2s;
-}
-
-.user-dropdown-content li a:hover {
-    background: #fff5eb;
-    color: #e67e22;
-}
-
-/* ================= CONTENT SLOT ================= */
-.admin-content {
-    flex: 1;
-    padding: 25px;
-    overflow-y: auto;
-    /* Cho phép scroll bên trong nội dung nếu quá dài */
-}
-
-/* ================= RESPONSIVE ================= */
-@media (max-width: 768px) {
-    .sidebar {
-        position: fixed;
-        height: 100vh;
-        left: -260px;
-        /* Giấu sidebar ngoài màn hình */
-    }
-
-    .sidebar:not(.sidebar-closed) {
-        left: 0;
-        width: 260px;
-        /* Hiện ra khi toggle */
-    }
-
-    .main-wrapper {
-        width: 100%;
-    }
+/* Admin accent — cam (default của panel-layout, khai báo tường minh cho rõ) */
+.admin-theme {
+    --accent-color: #e8672a;
+    --accent-hover: #c45320;
+    --accent-light: rgba(232, 103, 42, 0.12);
 }
 </style>
