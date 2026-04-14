@@ -106,7 +106,7 @@ const filteredItems = computed(() => {
 
 // --- HELPER ---
 // Tự động lấy Base URL từ môi trường (hoặc local), bỏ đuôi /api đi để trỏ vào /storage
-const storageBaseUrl = (import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api').replace('/api', '/storage/');
+const storageBaseUrl = (import.meta.env.VITE_API_URL || '"https://ct466-restaurant-be-production.up.railway.app/api').replace('/api', '/storage/');
 const getImageUrl = (path) => path ? `${storageBaseUrl}${path}` : '';
 
 const formatPrice = (value) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
