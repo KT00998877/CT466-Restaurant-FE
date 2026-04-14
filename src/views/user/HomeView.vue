@@ -108,11 +108,6 @@ onUnmounted(() => stopTimer());
             </div>
         </div>
 
-        <div class="menu-section" ref="menuSectionRef">
-            <div class="container" v-if="!isLoading">
-            </div>
-        </div>
-
         <div class="carousel-section" v-if="carouselItems.length > 0">
             <h1 class="section-title">Combo Khuyến Mãi Hot</h1>
             <div class="carousel-container">
@@ -136,7 +131,7 @@ onUnmounted(() => stopTimer());
             </div>
         </div>
 
-        <div class="menu-section">
+        <div class="menu-section" ref="menuSectionRef">
             <div class="container" v-if="!isLoading">
                 <div class="menu-header">
                     <span class="decor-icon">🍴</span>
@@ -178,7 +173,6 @@ onUnmounted(() => stopTimer());
 </template>
 
 <style scoped>
-
 .hero-banner {
     height: 80vh;
     width: 100%;
@@ -276,7 +270,6 @@ onUnmounted(() => stopTimer());
 
 .carousel-slide:hover .clickable-img {
     transform: scale(1.02);
-    
 }
 
 .carousel-section {
@@ -337,7 +330,6 @@ onUnmounted(() => stopTimer());
     margin: 0 auto 10px;
     display: -webkit-box;
     -webkit-line-clamp: 2;
-    /* Giới hạn mô tả 2 dòng tránh làm caption quá cao */
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
@@ -355,10 +347,8 @@ onUnmounted(() => stopTimer());
     margin: 0 auto;
 }
 
-
 .carousel-btn {
     pointer-events: auto;
-    /* QUAN TRỌNG: Cho phép click vào nút này dù caption là none */
     background-color: #e67e22;
     color: white;
     border: none;
@@ -374,7 +364,6 @@ onUnmounted(() => stopTimer());
 .carousel-btn:hover {
     background-color: #d35400;
     transform: translateY(-2px);
-    /* Hiệu ứng nảy nhẹ khi hover */
 }
 
 .fade {
@@ -598,5 +587,4 @@ onUnmounted(() => stopTimer());
     font-size: 1.2rem;
     margin-top: 50px;
 }
-
 </style>
