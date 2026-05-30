@@ -151,17 +151,21 @@
                                         {{ ing.stock_quantity }} {{ ing.unit }}
                                     </span>
                                 </small>
+                                <div v-if="ing.quantity_required > ing.stock_quantity" class="text-danger small mt-1 fw-semibold">
+                                    <i class="bi bi-exclamation-triangle-fill me-1"></i>Thiếu: {{ (ing.quantity_required - ing.stock_quantity).toFixed(3) }} {{ ing.unit }}
+                                </div>
                             </div>
 
                             <div class="d-flex align-items-center gap-1">
                                 <button class="btn btn-sm btn-outline-secondary px-2"
-                                    @click="ing.quantity_required = Math.max(0, +(ing.quantity_required - 0.01).toFixed(3))">
+                                    @click="decreaseQuantity(ing)">
                                     <i class="bi bi-dash"></i>
                                 </button>
                                 <input type="number" class="form-control form-control-sm text-center"
-                                    style="width: 80px;" v-model.number="ing.quantity_required" min="0" step="0.01" />
+                                    style="width: 80px;" @input="validateQuantity(ing)"
+                                    v-model.number="ing.quantity_required" min="0" step="0.01" />
                                 <button class="btn btn-sm btn-outline-secondary px-2"
-                                    @click="ing.quantity_required = +(ing.quantity_required + 0.01).toFixed(3)">
+                                    @click="increaseQuantity(ing)">
                                     <i class="bi bi-plus"></i>
                                 </button>
                                 <span class="text-muted small ms-1" style="min-width:30px">{{ ing.unit }}</span>
@@ -194,7 +198,9 @@
                     <button class="btn btn-secondary" @click="showIngredientModal = false">
                         <i class="bi bi-x-circle me-1"></i> Đóng
                     </button>
-                    <button class="btn btn-warning fw-bold text-dark" :disabled="isLoadingIngredients"
+                    <button class="btn btn-warning fw-bold text-dark"
+                        :disabled="isLoadingIngredients || hasInsufficientIngredients"
+                        :title="hasInsufficientIngredients ? 'Kho không đủ nguyên liệu' : ''"
                         @click="confirmStartCooking">
                         <i class="bi bi-play-fill me-1"></i> Xác nhận nấu
                     </button>
@@ -273,6 +279,11 @@ const filteredTables = computed(() => {
     return Object.values(groups);
 });
 
+// Kiểm tra xem có nguyên liệu nào không đủ không
+const hasInsufficientIngredients = computed(() => {
+    return modalData.value.ingredients.some(ing => ing.quantity_required > ing.stock_quantity);
+});
+
 // ─── CÁC HÀM XỬ LÝ (MODAL, NGUYÊN LIỆU) ──────────────────────
 const startCooking = async (item) => {
     currentCookingItemId.value = item.id;
@@ -327,6 +338,24 @@ const removeIngredient = (index) => {
     modalData.value.ingredients.splice(index, 1);
 };
 
+// Hàm giảm số lượng (không cho phép âm)
+const decreaseQuantity = (ing) => {
+    const newValue = +(ing.quantity_required - 0.01).toFixed(3);
+    ing.quantity_required = Math.max(0, newValue);
+};
+
+// Hàm tăng số lượng
+const increaseQuantity = (ing) => {
+    ing.quantity_required = +(ing.quantity_required + 0.01).toFixed(3);
+};
+
+// Hàm validate số lượng khi nhập trực tiếp
+const validateQuantity = (ing) => {
+    if (ing.quantity_required < 0) {
+        ing.quantity_required = 0;
+    }
+};
+
 // ✅ Quan trọng: Gửi mảng nguyên liệu xuống Backend
 const confirmStartCooking = async () => {
     try {
@@ -344,10 +373,12 @@ const confirmStartCooking = async () => {
 
         if (res.data.success) {
             showIngredientModal.value = false;
+            Swal.fire({ icon: 'success', title: 'Thành công', text: 'Bắt đầu nấu thành công!' });
             fetchItems();
         }
     } catch (error) {
-        Swal.fire({ icon: 'error', title: 'Lỗi', text: 'Không thể cập nhật trạng thái!' });
+        const errorMsg = error.response?.data?.message || 'Không thể cập nhật trạng thái!';
+        Swal.fire({ icon: 'error', title: 'Lỗi', text: errorMsg });
     }
 };
 

@@ -21,7 +21,10 @@
                     </div>
 
                     <div class="form-group">
-                        <label>Mật khẩu</label>
+                        <label class="d-flex justify-content-between">
+                            <span>Mật khẩu</span>
+                            
+                        </label>
                         <input v-model="form.password" type="password" placeholder="••••••••"
                             :class="{ error: errors.password }" autocomplete="current-password" />
                         <span v-if="errors.password" class="field-error">{{ errors.password[0] }}</span>
@@ -32,6 +35,8 @@
                         {{ loading ? 'Đang xử lý...' : 'Đăng Nhập' }}
                     </button>
                 </form>
+                <router-link to="/forgot-password" class="text-primary text-decoration-none"
+                    style="font-size: 0.85rem;">Quên mật khẩu?</router-link>
 
                 <p class="auth-footer">
                     Chưa có tài khoản?

@@ -17,6 +17,7 @@ import ShippingPolicy from "../views/user/ShippingPolicy.vue";
 import UserProfile from "../views/user/UserProfile.vue";
 import FeaturedMenu from "../views/user/FeaturedMenu.vue";
 import DailySpecials from "../views/user/DailySpecialMenu.vue";
+import ForgotPasswordView from "../views/auth/ForgotPassword.vue";
 
 // --- Import Layouts ---
 import AdminLayout from "../views/layouts/AdminLayout.vue";
@@ -70,6 +71,12 @@ const routes = [
     path: "/register",
     name: "register",
     component: RegisterView,
+    meta: { guest: true },
+  },
+  {
+    path: "/forgot-password",
+    name: "forgot-password",
+    component: ForgotPasswordView,
     meta: { guest: true },
   },
 

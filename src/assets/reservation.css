@@ -1,0 +1,629 @@
+
+.reservation-page {
+    min-height: 100vh;
+    background: #f7f8fc;
+    padding: 2rem 1rem;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+.reservation-container {
+    max-width: 960px;
+    margin: 0 auto;
+}
+
+.page-title {
+    font-size: 1.9rem;
+    font-weight: 700;
+    color: #1a202c;
+    margin-bottom: 1.5rem;
+}
+
+/* ── Danh sách bàn ── */
+.loading {
+    text-align: center;
+    color: #a0aec0;
+    padding: 3rem;
+    font-size: 1rem;
+}
+
+.tables-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1.4rem;
+}
+
+.table-card {
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, .07);
+    overflow: hidden;
+    transition: transform .2s, box-shadow .2s;
+    display: flex;
+    flex-direction: column;
+}
+
+.table-card:not(.unavailable):hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .12);
+}
+
+.table-card.unavailable {
+    opacity: .6;
+}
+
+.table-img-wrap {
+    position: relative;
+}
+
+.table-img {
+    width: 100%;
+    height: 170px;
+    object-fit: cover;
+    display: block;
+}
+
+.table-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: .25rem .7rem;
+    border-radius: 99px;
+    font-size: .78rem;
+    font-weight: 700;
+}
+
+.table-badge.available {
+    background: #c6f6d5;
+    color: #276749;
+}
+
+.table-badge.unavailable {
+    background: #e2e8f0;
+    color: #718096;
+}
+
+.table-info {
+    padding: 1rem 1.1rem .6rem;
+    flex: 1;
+}
+
+.table-name {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin: 0 0 .3rem;
+}
+
+.table-cap {
+    font-size: .9rem;
+    color: #718096;
+    margin: 0;
+}
+
+.btn-book {
+    margin: .8rem 1.1rem 1.1rem;
+    padding: .6rem 1rem;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: .95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity .2s;
+}
+
+.btn-book:hover:not(:disabled) {
+    opacity: .88;
+}
+
+.btn-book:disabled {
+    background: #e2e8f0;
+    color: #a0aec0;
+    cursor: not-allowed;
+}
+
+/* ── Form đặt bàn ── */
+.btn-back {
+    background: none;
+    border: none;
+    color: #667eea;
+    font-size: .95rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+    margin-bottom: 1rem;
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+}
+
+.btn-back:hover {
+    text-decoration: underline;
+}
+
+.selected-summary {
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
+    padding: 1rem 1.4rem;
+    margin-bottom: 1.4rem;
+}
+
+.summary-img {
+    width: 90px;
+    height: 65px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.summary-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin: 0 0 .3rem;
+}
+
+.summary-cap {
+    font-size: .88rem;
+    color: #718096;
+    margin: 0;
+}
+
+.form-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, .07);
+    padding: 1.8rem;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+@media (max-width: 600px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    font-size: .88rem;
+    font-weight: 600;
+    color: #4a5568;
+    margin-bottom: .35rem;
+}
+
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    padding: .65rem .9rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: .95rem;
+    color: #2d3748;
+    outline: none;
+    transition: border-color .2s;
+    box-sizing: border-box;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    border-color: #667eea;
+}
+
+.form-group input.error {
+    border-color: #e53e3e;
+}
+
+.field-error {
+    color: #e53e3e;
+    font-size: .82rem;
+    margin-top: .25rem;
+    display: block;
+}
+
+.btn-submit {
+    width: 100%;
+    padding: .8rem;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .5rem;
+    transition: opacity .2s;
+    margin-top: .5rem;
+}
+
+.btn-submit:hover:not(:disabled) {
+    opacity: .9;
+}
+
+.btn-submit:disabled {
+    opacity: .55;
+    cursor: not-allowed;
+}
+
+/* ── Thành công ── */
+.success-screen {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, .08);
+    padding: 3rem 2rem;
+    text-align: center;
+    max-width: 480px;
+    margin: 0 auto;
+}
+
+.success-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.success-screen h2 {
+    font-size: 1.7rem;
+    font-weight: 700;
+    color: #1a202c;
+    margin-bottom: .5rem;
+}
+
+.success-screen p {
+    color: #718096;
+    margin-bottom: 1rem;
+}
+
+.success-detail {
+    background: #f7fafc;
+    border-radius: 10px;
+    padding: 1rem 1.4rem;
+    text-align: left;
+    line-height: 2.2;
+    font-size: .95rem;
+    color: #4a5568;
+    margin: 1.2rem 0;
+}
+
+.success-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.btn-primary {
+    padding: .65rem 1.4rem;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: .95rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn-outline {
+    padding: .65rem 1.4rem;
+    border: 2px solid #667eea;
+    color: #667eea;
+    border-radius: 8px;
+    font-size: .95rem;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-block;
+}
+
+/* Misc */
+.spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, .4);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin .6s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.alert {
+    padding: .8rem 1rem;
+    border-radius: 8px;
+    font-size: .9rem;
+    margin-bottom: 1rem;
+}
+
+.alert-error {
+    background: #fff5f5;
+    color: #c53030;
+    border: 1px solid #fed7d7;
+}
+
+.alert-success {
+    background: #f0fff4;
+    color: #276749;
+    border: 1px solid #9ae6b4;
+}
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    filter: invert(0.5);
+    /* Thay đổi màu icon nếu cần */
+    padding: 5px;
+}
+
+input[type="datetime-local"] {
+    appearance: none;
+    -webkit-appearance: none;
+    position: relative;
+}
+
+/* Đảm bảo toàn bộ ô input có thể click để mở lịch */
+input[type="datetime-local"]::-webkit-datetime-edit {
+    padding: 0 0.5rem;
+}
+
+.field-error {
+    color: #ff4d4f;
+    font-size: 0.85rem;
+    margin-top: 4px;
+    display: block;
+}
+
+.error {
+    border-color: #ff4d4f !important;
+}
+.datetime-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.datetime-input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer; /* Biến con trỏ thành hình bàn tay */
+    font-family: inherit;
+}
+
+/* Tùy chỉnh icon lịch/đồng hồ của trình duyệt */
+.datetime-input::-webkit-calendar-picker-indicator {
+    background-color: transparent;
+    cursor: pointer;
+    height: 20px;
+    width: 20px;
+    /* Bạn có thể thêm icon riêng ở đây nếu muốn */
+}
+
+/* Đảm bảo toàn bộ ô input đều có thể click để mở lịch */
+.datetime-input::-webkit-datetime-edit {
+    display: flex;
+    padding: 0;
+}
+
+.field-error {
+    color: #dc3545;
+    font-size: 0.85rem;
+    margin-top: 5px;
+    display: block;
+}
+
+.error {
+    border-color: #dc3545 !important;
+}
+/* ── Datetime picker row ── */
+.datetime-picker-row {
+    display: flex;
+    gap: 10px;
+}
+
+.picker-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 0 12px;
+    background: #fff;
+    transition: border-color 0.2s;
+}
+
+.picker-wrap:focus-within,
+.clock-trigger:hover {
+    border-color: #f97316;
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.12);
+}
+
+.picker-wrap.error {
+    border-color: #ef4444;
+}
+
+.picker-svg-icon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    color: #9ca3af;
+    pointer-events: none;
+}
+
+.picker-input {
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    padding: 12px 0;
+    width: 100%;
+    background: transparent;
+    font-size: 15px;
+    color: #1e293b;
+    cursor: pointer;
+}
+
+.picker-input::-webkit-calendar-picker-indicator {
+    opacity: 0;
+    position: absolute;
+    right: 0;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+}
+
+.clock-trigger {
+    cursor: pointer;
+    user-select: none;
+}
+
+.clock-display {
+    font-size: 15px;
+    color: #1e293b;
+}
+
+.clock-display.placeholder {
+    color: #9ca3af;
+}
+
+/* ── Clock panel ── */
+.clock-panel {
+    position: absolute;
+    z-index: 100;
+    margin-top: 8px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 16px;
+    width: 280px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.clock-mode-tabs {
+    display: flex;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 14px;
+}
+
+.clock-mode-tabs button {
+    flex: 1;
+    padding: 8px;
+    border: none;
+    font-size: 13px;
+    cursor: pointer;
+    background: #f9fafb;
+    color: #6b7280;
+    transition: all 0.15s;
+}
+
+.clock-mode-tabs button.active {
+    background: #fff7ed;
+    color: #f97316;
+    font-weight: 600;
+}
+
+.clock-time-display {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-bottom: 14px;
+}
+
+.clock-time-display span {
+    font-size: 30px;
+    font-weight: 500;
+    color: #9ca3af;
+    background: #f9fafb;
+    border-radius: 8px;
+    padding: 4px 10px;
+    cursor: pointer;
+    transition: color 0.15s;
+}
+
+.clock-time-display span.active {
+    color: #f97316;
+}
+
+.clock-time-display .colon {
+    font-size: 26px;
+    color: #d1d5db;
+}
+
+.ampm-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-left: 4px;
+}
+
+.ampm-group button {
+    padding: 4px 8px;
+    font-size: 11px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    cursor: pointer;
+    background: #f9fafb;
+    color: #6b7280;
+    transition: all 0.15s;
+}
+
+.ampm-group button.active {
+    background: #fff7ed;
+    color: #f97316;
+    border-color: #f97316;
+    font-weight: 600;
+}
+
+.clock-face {
+    display: flex;
+    justify-content: center;
+    cursor: pointer;
+    margin-bottom: 14px;
+    border-radius: 50%;
+    overflow: hidden;
+}
+
+.clock-face canvas {
+    display: block;
+    max-width: 220px;
+    touch-action: none;
+}
+
+.btn-confirm-time {
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #f97316, #ea580c);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.btn-confirm-time:hover {
+    opacity: 0.9;
+}
+
+/* Đặt form-group relative để dropdown định vị đúng */
+.form-group {
+    position: relative;
+}
