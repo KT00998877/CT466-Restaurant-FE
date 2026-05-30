@@ -58,6 +58,14 @@
                         <i class="bi bi-box-seam panel-nav__icon"></i>
                         <span class="panel-nav__text">Nguyên liệu</span>
                     </router-link>
+                    <router-link to="/admin/warehouse-operations" class="panel-nav__item" title="Xuất Nhập Kho">
+                        <i class="bi bi-arrow-left-right panel-nav__icon"></i>
+                        <span class="panel-nav__text">Xuất Nhập Kho</span>
+                    </router-link>
+                    <router-link to="/admin/warehouse-report" class="panel-nav__item" title="Báo Cáo Kho">
+                        <i class="bi bi-file-earmark-text panel-nav__icon"></i>
+                        <span class="panel-nav__text">Báo Cáo Kho</span>
+                    </router-link>
                     <router-link to="/admin/inventory" class="panel-nav__item" title="Kho hàng">
                         <i class="bi bi-bar-chart panel-nav__icon"></i>
                         <span class="panel-nav__text">Kho hàng</span>
@@ -158,6 +166,8 @@ const pageMap = {
     '/admin/reservations': 'Đặt bàn',
     '/admin/users': 'Tài khoản',
     '/admin/ingredients': 'Nguyên liệu',
+    '/admin/warehouse-operations': 'Xuất Nhập Kho',
+    '/admin/warehouse-report': 'Báo Cáo Kho',
     '/admin/inventory': 'Kho hàng',
     '/admin/contacts': 'Liên hệ',
     '/admin/reports': 'Báo cáo',

@@ -46,11 +46,16 @@
                     <div class="card border-0 shadow-sm h-100">
                         <div class="card-header text-white d-flex justify-content-between align-items-center py-3"
                             :class="table.isTakeaway ? 'bg-success' : 'bg-primary'">
-                            <h5 class="mb-0 fw-bold">
-                                <i :class="table.isTakeaway ? 'bi-bag-fill' : 'bi-geo-alt-fill'"
-                                    class="me-2 text-warning"></i>
-                                {{ table.tableName }}
-                            </h5>
+                            <div>
+                                <h5 class="mb-1 fw-bold">
+                                    <i :class="table.isTakeaway ? 'bi-bag-fill' : 'bi-geo-alt-fill'"
+                                        class="me-2 text-warning"></i>
+                                    {{ table.tableName }}
+                                </h5>
+                                <small v-if="table.orderCode" class="text-light" style="opacity: 0.85;">
+                                    <i class="bi bi-hash me-1"></i>Mã đơn: <strong>{{ table.orderCode }}</strong>
+                                </small>
+                            </div>
                             <span class="badge bg-white text-dark">{{ table.items.length }} món</span>
                         </div>
 
@@ -100,6 +105,12 @@
                                                         class="btn btn-sm btn-success fw-bold"
                                                         @click="updateStatus(item.id, 'ready')">
                                                         XONG
+                                                    </button>
+                                                    <button v-if="item.status === 'cooking'"
+                                                        class="btn btn-sm btn-outline-warning fw-bold"
+                                                        @click="undoCooking(item)"
+                                                        title="Hoàn tác - Quay lại trạng thái chờ chế biến">
+                                                        <i class="bi bi-arrow-counterclockwise me-1"></i>HOÀN TÁC
                                                     </button>
                                                     <button class="btn btn-sm btn-outline-danger"
                                                         @click="cancelItem(item)">
@@ -270,9 +281,16 @@ const filteredTables = computed(() => {
 
     const groups = {};
     list.forEach(item => {
-        const name = item.order?.table?.name || 'Đơn Mang Đi';
+        // Cho bàn ăn, nhóm theo tên bàn. Cho đơn mang đi, nhóm theo mã đơn
+        const name = item.order?.table?.name || `Mang đi: ${item.order?.order_code || 'N/A'}`;
+        const orderCode = item.order?.order_code;
         if (!groups[name]) {
-            groups[name] = { tableName: name, isTakeaway: !item.order?.table?.name, items: [] };
+            groups[name] = {
+                tableName: name,
+                orderCode: orderCode,
+                isTakeaway: !item.order?.table?.name,
+                items: []
+            };
         }
         groups[name].items.push(item);
     });
@@ -389,6 +407,32 @@ const updateStatus = async (id, newStatus) => {
         if (res.data.success) fetchItems();
     } catch (error) {
         alert('Lỗi cập nhật trạng thái!');
+    }
+};
+
+// Hàm hoàn tác (cooking → pending)
+const undoCooking = async (item) => {
+    const { isConfirmed } = await Swal.fire({
+        title: 'Hoàn tác?',
+        html: `Bạn có chắc chắn muốn hoàn tác món <b>"${item.item_name}"</b>?<br><small class="text-muted">Nguyên liệu sẽ được hoàn lại kho.</small>`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ffc107',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Đồng ý hoàn tác',
+        cancelButtonText: 'Hủy'
+    });
+
+    if (!isConfirmed) return;
+
+    try {
+        const res = await api.patch(`/kitchen/items/${item.id}/status`, { status: 'pending' });
+        if (res.data.success) {
+            Swal.fire({ icon: 'success', title: 'Thành công', text: 'Đã hoàn tác và hoàn lại kho!' });
+            fetchItems();
+        }
+    } catch (error) {
+        Swal.fire({ icon: 'error', title: 'Lỗi', text: 'Không thể hoàn tác!' });
     }
 };
 

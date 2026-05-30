@@ -46,6 +46,8 @@ import ReservationManagement from "../views/admin/ReservationManagement.vue";
 import UserManagement from "../views/admin/UserManagement.vue";
 import IngredientManager from "../views/admin/IngredientManager.vue";
 import AdminInventory from "../views/admin/AdminInventory.vue";
+import WarehouseOperations from "../views/admin/WarehouseOperations.vue";
+import WarehouseReport from "../views/admin/WarehouseReport.vue";
 import AdminReport from "../views/admin/AdminReport.vue";
 import DishManagement from "../views/admin/DishManagement.vue";
 import ContactManagement from "../views/admin/ContactManagement.vue";
@@ -239,6 +241,8 @@ const routes = [
       { path: "users", name: "admin-users", component: UserManagement },
       { path: "ingredients", name: "admin-ingredients", component: IngredientManager },
       { path: "inventory", name: "admin-inventory", component: AdminInventory },
+      { path: "warehouse-operations", name: "admin-warehouse-operations", component: WarehouseOperations },
+      { path: "warehouse-report", name: "admin-warehouse-report", component: WarehouseReport },
       { path: "reports", name: "admin-reports", component: AdminReport },
       { path: "dishes", name: "admin-dishes", component: DishManagement },
       { path: "contacts", name: "admin-contacts", component: ContactManagement },
